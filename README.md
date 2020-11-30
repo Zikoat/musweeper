@@ -1,2 +1,10 @@
 # musweeper
-AI project using MuZero to play Minesweeper
+AI project using MuZero to play Minesweeper for [IMT3104](https://www.ntnu.no/studier/emner/IMT3104#tab=omEmnet)
+
+
+## todo
+- [ ] Get muzero up and running (with tests)
+- [ ] Merge in [Gym-minesweeper](https://github.com/Zikoat/gym-minesweeper)
+
+- [ ] Evaluate muzero vs [mrgris](http://mrgris.com/projects/minesweepr/)
+- [ ] Use mrgris for giving the model "dark Knowledge" (simulate states from mrgris and use his actions as optimal)
