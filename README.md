@@ -10,3 +10,11 @@ AI project using MuZero to play Minesweeper for [IMT3104](https://www.ntnu.no/st
 - [ ] Create a small test which trains the model and plays minesweeper, and calculates the average win rate.
 - [ ] Create a simple script to run this in the colab notebook for offloading the training and eventual data analysis to Colab.
 - [ ] Calculate average win rate
+
+## Testing
+
+```shell script
+cd muzero
+python -m unittest
+```
+Using pycharm: right-click test folder -> run 'unittest in test'
