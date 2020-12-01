@@ -1,4 +1,4 @@
 
-def basic_fucntion():
+def basic_function():
 	return 42
-	
+
