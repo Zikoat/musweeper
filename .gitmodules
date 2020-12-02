@@ -4,3 +4,6 @@
 [submodule "gym-minesweeper"]
 	path = gym-minesweeper
 	url = https://github.com/Zikoat/gym-minesweeper.git
+[submodule "minesweepr"]
+	path = minesweepr
+	url = https://github.com/mrgriscom/minesweepr.git
