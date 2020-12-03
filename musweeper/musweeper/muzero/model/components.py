@@ -1,8 +1,18 @@
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
+from torch.nn.modules import transformer
 
-class component_dynamics(nn.Module):
+def transform_input(tensor):
+	if torch.cuda.is_available():
+		return tensor.cuda()
+	return tensor
+
+class shared_backbone:
+	def __init__(self):
+		self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+class component_dynamics(nn.Module, shared_backbone):
 	"""
 	Description of the dynamics component of muzero 
 	the role of the dynamics component is to learn the effect of actions
@@ -10,15 +20,16 @@ class component_dynamics(nn.Module):
 	"""
 	def __init__(self, representation_size):
 		super(component_dynamics, self).__init__()
+		shared_backbone.__init__(self)
 		self.shared_hidden_size = 256
 
-		self.preprocess_state = nn.Linear(representation_size, self.shared_hidden_size)
-		self.preprocess_action = nn.Linear(1, self.shared_hidden_size)
+		self.preprocess_state = nn.Linear(representation_size, self.shared_hidden_size).to(self.device)
+		self.preprocess_action = nn.Linear(1, self.shared_hidden_size).to(self.device)
 
-		self.combined = nn.Linear(2 * self.shared_hidden_size, 128)
+		self.combined = nn.Linear(2 * self.shared_hidden_size, 128).to(self.device)
 
-		self.reward = nn.Linear(128, 1)
-		self.new_state = nn.Linear(128, representation_size)
+		self.reward = nn.Linear(128, 1).to(self.device)
+		self.new_state = nn.Linear(128, representation_size).to(self.device)
 
 	def forward(self, state, action):
 		"""
@@ -38,27 +49,32 @@ class component_dynamics(nn.Module):
 		torch.tensor
 			the predicted reward from the given action 
 		"""
+		state = transform_input(state)
+		action = transform_input(action)
+
 		state = self.preprocess_state(state)
-		state = state.view(state.size(0), -1)
+		state = torch.sigmoid(state.view(state.size(0), -1))
 		action = self.preprocess_action(action)
-		action = action.view(action.size(0), -1)
+		action = torch.sigmoid(action.view(action.size(0), -1))
 
-		combined = self.combined(torch.cat((state, action), dim=1))
-		return self.new_state(combined), self.reward(combined)
+		combined = torch.sigmoid(self.combined(torch.cat((state, action), dim=1)))
+		return torch.sigmoid(self.new_state(combined)), torch.sigmoid(self.reward(combined))
 
 
-class component_predictions(nn.Module):
+class component_predictions(nn.Module, shared_backbone):
 	"""
 	The prediction component will learn the optimal state and value function
 	this is predicted from the current state from the representation component.
 	"""
 	def __init__(self, representation_size, action_size):
 		super(component_predictions, self).__init__()
-		self.preprocess_state = nn.Linear(representation_size, 256)
-		self.combined = nn.Linear(256, 128)
+		shared_backbone.__init__(self)
 
-		self.value = nn.Linear(128, 1)
-		self.policy = nn.Linear(128, action_size)
+		self.preprocess_state = nn.Linear(representation_size, 256).to(self.device)
+		self.combined = nn.Linear(256, 128).to(self.device)
+
+		self.value = nn.Linear(128, 1).to(self.device)
+		self.policy = nn.Linear(128, action_size).to(self.device)
 
 	def forward(self, state):
 		"""
@@ -78,11 +94,12 @@ class component_predictions(nn.Module):
 		"""
 		if len(state.shape) == 1:
 			state = state.reshape((1, -1))
-		state = self.preprocess_state(state)
-		combined = self.combined(state)
-		return torch.sigmoid(self.policy(combined)), self.value(combined)
+		state = transform_input(state)
+		state = torch.sigmoid(self.preprocess_state(state))
+		combined = torch.sigmoid(self.combined(state))
+		return torch.sigmoid(self.policy(combined)), torch.sigmoid(self.value(combined))
 
-class component_representation(nn.Module):
+class component_representation(nn.Module, shared_backbone):
 	"""
 	The representation component will convert the real environment state to lantent space
 	muzero does not use environment state directly. It converts it to latent space and
@@ -90,9 +107,11 @@ class component_representation(nn.Module):
 	"""
 	def __init__(self, env_size, representation_size):
 		super(component_representation, self).__init__()
-		self.preprocess_state = nn.Linear(env_size, 256)
-		self.combined = nn.Linear(256, 128)
-		self.representation = nn.Linear(128, representation_size)
+		shared_backbone.__init__(self)
+
+		self.preprocess_state = nn.Linear(env_size, 256).to(self.device)
+		self.combined = nn.Linear(256, 128).to(self.device)
+		self.representation = nn.Linear(128, representation_size).to(self.device)
 
 	def forward(self, state):
 		"""
@@ -110,8 +129,9 @@ class component_representation(nn.Module):
 		"""
 		if len(state.shape) == 1:
 			state = state.reshape((1, -1))
-		state = self.preprocess_state(state)
-		combined = self.combined(state)
+		state = transform_input(state)
+		state = torch.sigmoid(self.preprocess_state(state))
+		combined = torch.sigmoid(self.combined(state))
 
-		return self.representation(combined)
+		return torch.sigmoid(self.representation(combined))
 
