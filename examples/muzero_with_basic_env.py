@@ -13,6 +13,8 @@ print(model)
 
 game_score = []
 sum_loss = 0
+
+replay_buffer = reply_buffer()
 for i in range(1000):
 	if i % 100 == 0 and i > 0:
 		print('%d: min=%.2f median=%.2f max=%.2f eval=%.2f, sum of 100 last games=%.2f, loss=%.2f' % (i, min(game_score), game_score[len(game_score)//2], max(game_score), sum(game_score)/len(game_score), sum(game_score[-100:]), sum_loss))
@@ -38,8 +40,12 @@ for i in range(1000):
 		game_history.actual_value.append(best_value)
 		sum_score += reward
 
+	replay_buffer.add(game_history)
+
 	optimizer.zero_grad()
-	total_loss = loss_from_game(model, game_history)
+	total_loss = torch.tensor(0, dtype=torch.float64)
+	for game in replay_buffer.get_batch():
+		total_loss += loss_from_game(model, game)
 	total_loss.backward()
 	optimizer.step()
 	game_score.append(sum_score)
