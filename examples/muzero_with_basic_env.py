@@ -1,6 +1,8 @@
 from musweeper.muzero.utils.basic_env import *
 from musweeper.muzero.model.muzero import *
 from musweeper.muzero.utils.training_loop import *
+from musweeper.muzero.model.components import transform_input
+
 import torch.optim as optim
 
 env = BasicEnv()
@@ -43,7 +45,7 @@ for i in range(1000):
 	replay_buffer.add(game_history)
 
 	optimizer.zero_grad()
-	total_loss = torch.tensor(0, dtype=torch.float64)
+	total_loss = transform_input(torch.tensor(0, dtype=torch.float64))
 	for game in replay_buffer.get_batch():
 		total_loss += loss_from_game(model, game)
 	total_loss.backward()

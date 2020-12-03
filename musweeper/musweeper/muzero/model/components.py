@@ -4,7 +4,7 @@ import torch
 from torch.nn.modules import transformer
 
 def transform_input(tensor):
-	if torch.cuda.is_available():
+	if not tensor.is_cuda and torch.cuda.is_available():
 		return tensor.cuda()
 	return tensor
 
