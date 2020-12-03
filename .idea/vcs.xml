@@ -3,6 +3,7 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/gym-minesweeper" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/minesweepr" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/overleaf" vcs="Git" />
   </component>
 </project>
