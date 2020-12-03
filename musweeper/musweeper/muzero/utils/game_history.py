@@ -6,10 +6,12 @@ class game_history:
 		self.actual_reward = []
 
 		self.state = []
-		self.action = []
 
+		self.action = []
+		self.actual_action = []
+
+		self.actual_value = []
 		self.value = []
-		self.policy = []
 
 	@property
 	def length(self):

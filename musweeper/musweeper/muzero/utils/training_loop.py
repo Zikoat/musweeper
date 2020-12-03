@@ -1,13 +1,15 @@
 import torch.nn as nn
+import torch
 
 def loss_from_game(model, game_history):
 	"""
 	The loss tries to make the model reason about the future based on the past
 	"""
 	loss_error = nn.MSELoss()
+	loss_error_actions = nn.CrossEntropyLoss()
 	model.reset()
 
-	entire_loss = 0
+	entire_loss = torch.tensor(0, dtype=torch.float64)
 	K = model.max_search_depth
 	for t in range(game_history.length):
 		if not (t + K) < game_history.length:
@@ -20,10 +22,18 @@ def loss_from_game(model, game_history):
 		total_loss = 0
 		model.plan_action(game_history.state[t])
 		predicted_rollout_game_history = model.tree.get_rollout_path()
+		assert len(predicted_rollout_game_history.reward) >= K, "wrong size {} expected {}".format(len(predicted_rollout_game_history.reward), K)
 		for k in range((K)):
-			predicted_reward = predicted_rollout_game_history.reward[k]
-			actual_reward = game_history.actual_reward[t + k]
-			total_loss += loss_error(actual_reward, predicted_reward)
+			predicted_reward = predicted_rollout_game_history.reward[k].float()
+			actual_reward = game_history.actual_reward[t + k].float()
+
+			predicted_action = predicted_rollout_game_history.action[k]
+			actual_action = torch.tensor([game_history.actual_action[t + k]])
+
+			predicted_value =  torch.tensor([float(predicted_rollout_game_history.value[k])], dtype=torch.float64)
+			actual_value = torch.tensor([float(game_history.actual_value[t + k])], dtype=torch.float64)
+
+			total_loss += loss_error(predicted_reward, actual_reward) + loss_error_actions(predicted_action, actual_action) + loss_error(predicted_value, actual_value)
 		entire_loss += (total_loss)	
-		model.update(None, game_history.action[t])
+		model.update(None, game_history.actual_action[t])
 	return entire_loss

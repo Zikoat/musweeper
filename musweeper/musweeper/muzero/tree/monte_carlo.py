@@ -56,7 +56,11 @@ class monte_carlo_search_tree:
 				new_node = self.select(current_node.children)
 
 			if model is not None:
-				new_node.on_node_creation(*model.dynamics(current_node.hidden_state, torch.tensor([new_node.node_id]).float().reshape((1, -1))))
+				state, action_tensor = current_node.hidden_state.reshape((1, -1)), torch.tensor([new_node.node_id]).float().reshape((1, -1))
+				next_state, reward = model.dynamics(state, action_tensor)
+				policy, _ = model.prediction(state)
+				new_node.on_node_creation(next_state, reward, policy)
+#				new_node.on_node_creation(*model.dynamics(current_node.hidden_state, torch.tensor([new_node.node_id]).float().reshape((1, -1))))
 
 			current_node = new_node
 			relative_depth_level += 1
@@ -110,8 +114,10 @@ class monte_carlo_search_tree:
 		if type(node) == int:
 			node = self.root.create_children_if_not_exist(node)
 		if model:
-			state, action = self.root.hidden_state.reshape((1, -1)), torch.tensor([node.node_id]).float().reshape((1, -1))
-			node.on_node_creation(*model.dynamics(state, action))
+			state, action_tensor = self.root.hidden_state.reshape((1, -1)), torch.tensor([node.node_id]).float().reshape((1, -1))
+			next_state, reward = model.dynamics(state, action_tensor)
+			policy, _ = model.prediction(state)
+			node.on_node_creation(next_state, reward, policy)
 		output_node = self.expand(node, model)
 		self.backpropgate(output_node)
 		return output_node
@@ -127,6 +133,7 @@ class monte_carlo_search_tree:
 		action : int
 			the action taken.
 		"""
+		assert type(action) == int, "action should be int"
 		self.root = self.root.children[action]
 		self.root.environment_state = state
 
@@ -149,6 +156,7 @@ class monte_carlo_search_tree:
 		while 0 < len(current_node.children.keys()):
 			best_node = max(current_node.children.items(), key=lambda x: x[1].value)[1]
 			game_state.reward.append(best_node.reward)
-			game_state.value.append(best_node.value)			
+			game_state.action.append(best_node.policy)
+			game_state.value.append(best_node.value)
 			current_node = best_node
 		return game_state

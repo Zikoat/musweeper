@@ -12,6 +12,7 @@ class node:
 		self.wins_count = 0
 
 		self.reward = 0
+		self.policy = None
 
 		self.hidden_state = hidden_state
 		self.environment_state = None
@@ -30,7 +31,7 @@ class node:
 
 		return child_explored + c * np.sqrt(parrent_explored)
 
-	def on_node_creation(self, hidden_state, reward):
+	def on_node_creation(self, hidden_state, reward, policy):
 		"""
 		When a node is created this callback will be used
 
@@ -43,6 +44,7 @@ class node:
 		"""
 		self.reward = reward
 		self.hidden_state = hidden_state
+		self.policy = policy
 
 	def get_a_children_node(self, children_count):
 		if self.available_children_paths is None:

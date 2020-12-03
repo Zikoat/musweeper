@@ -80,8 +80,7 @@ class component_predictions(nn.Module):
 			state = state.reshape((1, -1))
 		state = self.preprocess_state(state)
 		combined = self.combined(state)
-
-		return self.policy(combined), self.value(combined)
+		return torch.sigmoid(self.policy(combined)), self.value(combined)
 
 class component_representation(nn.Module):
 	"""
