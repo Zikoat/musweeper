@@ -54,15 +54,15 @@ class monte_carlo_search_tree:
 				new_node = current_node.get_a_children_node(self.children_count)
 				# TODO : you should actually backpropgate as soon as a leaf is found
 				found_leaf = True
+				if model is not None:
+					state, action_tensor = current_node.hidden_state.reshape((1, -1)), torch.tensor([new_node.node_id]).float().reshape((1, -1))
+					next_state, reward = model.dynamics(state, action_tensor)
+					policy, _ = model.prediction(state)
+					new_node.on_node_creation(next_state, reward, policy)
+	#				new_node.on_node_creation(*model.dynamics(current_node.hidden_state, torch.tensor([new_node.node_id]).float().reshape((1, -1))))
+
 			else:
 				new_node = self.select(current_node.children)
-
-			if model is not None:
-				state, action_tensor = current_node.hidden_state.reshape((1, -1)), torch.tensor([new_node.node_id]).float().reshape((1, -1))
-				next_state, reward = model.dynamics(state, action_tensor)
-				policy, _ = model.prediction(state)
-				new_node.on_node_creation(next_state, reward, policy)
-#				new_node.on_node_creation(*model.dynamics(current_node.hidden_state, torch.tensor([new_node.node_id]).float().reshape((1, -1))))
 
 			current_node = new_node
 			relative_depth_level += 1

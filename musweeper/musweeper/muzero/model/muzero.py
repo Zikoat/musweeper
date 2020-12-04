@@ -19,6 +19,11 @@ def create_model(env, testing=False, config={}):
 		representation = component_representation(env_size, representation_size)
 		return representation, dynamics, prediction
 
+import atexit
+import line_profiler
+profile = line_profiler.LineProfiler()
+atexit.register(profile.print_stats)
+
 class muzero(nn.Module):
 	"""
 	Muzero uses three components for creating it's world model, the following
@@ -38,6 +43,7 @@ class muzero(nn.Module):
 		self.max_search_depth = max_search_depth
 		self.tree = None
 
+	@profile
 	def plan_action(self, current_state):
 		"""
 		at each state the model will do a roll out with the monte carlo tree and the learned model

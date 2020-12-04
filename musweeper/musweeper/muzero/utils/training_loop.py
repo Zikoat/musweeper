@@ -21,7 +21,7 @@ def loss_from_game(model, game_history):
 		I think you can cache the original results. Try to find that out.
 		"""
 		total_loss = transform_input(torch.tensor(0, dtype=torch.float64))
-		model.plan_action(game_history.state[t])
+		model.plan_action(transform_input(game_history.state[t]))
 		predicted_rollout_game_history = model.tree.get_rollout_path()
 		assert len(predicted_rollout_game_history.reward) >= K, "wrong size {} expected {}".format(len(predicted_rollout_game_history.reward), K)
 		for k in range((K)):
