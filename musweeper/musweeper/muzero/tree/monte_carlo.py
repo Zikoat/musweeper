@@ -43,6 +43,7 @@ class monte_carlo_search_tree:
 		relative_depth_level = 0
 		current_node = self.root if current_node is None else current_node
 		found_leaf = False
+		current_node.add_exploration_noise()
 		# TODO : add "or" for if current node is a terminated state 
 		while relative_depth_level < self.max_search_depth and not found_leaf:# and clock(self.timeout):
 			should_pick_random_node = self.random_rollout_metric(self, current_node)

@@ -24,6 +24,7 @@ class node:
 
 		self.reward = 0
 		self.policy = None
+		self.prior = 0
 
 		self.hidden_state = hidden_state
 		self.environment_state = None
@@ -32,6 +33,14 @@ class node:
 
 		self.available_children_paths = None
 		self.score_metric = self.search_value_exploration_exploration
+
+	def add_exploration_noise(self):
+		dirichlet_alpha = 0.03
+		root_exploration_fraction = 0.25
+		actions = list(self.children.values())
+		noise = np.random.dirichlet([dirichlet_alpha] * len(actions))
+		for action, noise in zip(actions, noise):
+			action.prior = action.prior * (1 - root_exploration_fraction) + noise * root_exploration_fraction
 
 	def search_value_exploration_exploration(self):
 		# https://en.wikipedia.org/wiki/Monte_Carlo_tree_search
@@ -47,7 +56,7 @@ class node:
 		self.c2 = 19652
 
 		self.q_s_a = self.q
-		self.p_s_a = self.value
+		self.p_s_a = self.prior
 
 		if self.parrent is None:
 			return 0

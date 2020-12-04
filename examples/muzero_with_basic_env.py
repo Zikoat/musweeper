@@ -4,6 +4,11 @@ from musweeper.muzero.utils.training_loop import *
 from musweeper.muzero.model.components import transform_input
 import time
 import torch.optim as optim
+import atexit
+import line_profiler
+profile = line_profiler.LineProfiler()
+atexit.register(profile.print_stats)
+
 
 env = BasicEnv()
 

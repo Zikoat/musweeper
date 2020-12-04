@@ -25,5 +25,6 @@ setuptools.setup(
         'torch',
         'numpy',
         'graphviz',
+        'line_profiler'
     ]
 )
