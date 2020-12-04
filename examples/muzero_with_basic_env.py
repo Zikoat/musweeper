@@ -2,7 +2,7 @@ from musweeper.muzero.utils.basic_env import *
 from musweeper.muzero.model.muzero import *
 from musweeper.muzero.utils.training_loop import *
 from musweeper.muzero.model.components import transform_input
-
+import time
 import torch.optim as optim
 
 env = BasicEnv()
@@ -17,7 +17,10 @@ game_score = []
 sum_loss = 0
 
 replay_buffer = reply_buffer()
-for i in range(1000):
+#for i in range(1000):
+start = time.time()
+i = 0
+while (time.time() - start) < 60 * 5 and i < 1000:
 	if i % 100 == 0 and i > 0:
 		print('%d: min=%.2f median=%.2f max=%.2f eval=%.2f, sum of 100 last games=%.2f, loss=%.2f' % (i, min(game_score), game_score[len(game_score)//2], max(game_score), sum(game_score)/len(game_score), sum(game_score[-100:]), sum_loss))
 		sum_loss = 0
@@ -52,3 +55,7 @@ for i in range(1000):
 	optimizer.step()
 	game_score.append(sum_score)
 	sum_loss += total_loss.item()
+	i += 1
+print(sum_loss)
+print(game_score)
+print(len(game_score))

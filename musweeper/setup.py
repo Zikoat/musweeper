@@ -1,9 +1,11 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 import setuptools
 import os
 
 path = os.path.dirname(os.path.abspath(__file__))
 readme_path = os.path.join(path, "../README.md")
-with open(readme_path, "r") as fh:
+with open(readme_path, "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 print("the packages are:")
@@ -19,4 +21,9 @@ setuptools.setup(
     url="https://github.com/Zikoat/musweeper",
     packages=setuptools.find_packages(),
     python_requires='>=3.6',
+    install_requires=[
+        'torch',
+        'numpy',
+        'graphviz',
+    ]
 )

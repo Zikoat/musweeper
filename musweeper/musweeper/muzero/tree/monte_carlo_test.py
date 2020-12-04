@@ -12,7 +12,8 @@ class TestMonteCarlo(unittest.TestCase):
 		# even if rollout is False, it will do rollout since none of the nodes has a children (yet)
 		tree = monte_carlo_search_tree(root, max_search_depth=max_search_depth, random_rollout_metric=lambda tree, node: False)
 
-		final_expanded_node = tree.expand()
+		for i in range(max_search_depth ** 2):
+			final_expanded_node = tree.expand()
 		assert final_expanded_node.depth == max_search_depth
 
 		current_node = root
@@ -32,7 +33,8 @@ class TestMonteCarlo(unittest.TestCase):
 		# even if rollout is False, it will do rollout since none of the nodes has a children (yet)
 		tree = monte_carlo_search_tree(root, max_search_depth=max_search_depth, random_rollout_metric=lambda tree, node: False)
 
-		final_expanded_node = tree.expand()
+		for i in range(max_search_depth ** 2):
+			final_expanded_node = tree.expand()
 		assert final_expanded_node.depth == max_search_depth
 		tree.update_root(None, tree.root.get_best_action())
 
@@ -47,7 +49,8 @@ class TestMonteCarlo(unittest.TestCase):
 		max_search_depth = 3
 		# even if rollout is False, it will do rollout since none of the nodes has a children (yet)
 		tree = monte_carlo_search_tree(root, max_search_depth=max_search_depth, random_rollout_metric=lambda tree, node: False)
-		final_expanded_node = tree.expand()
+		for i in range(max_search_depth ** 2):
+			final_expanded_node = tree.expand()
 
 		"""
 		setting all reward to one to make it easy to verify

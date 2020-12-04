@@ -3,6 +3,7 @@ import random
 from .node import *
 import torch
 from ..utils.game_history import *
+import time
 
 class clock:
 	def __init__(self, timeout):
@@ -43,7 +44,7 @@ class monte_carlo_search_tree:
 		current_node = self.root if current_node is None else current_node
 		found_leaf = False
 		# TODO : add "or" for if current node is a terminated state 
-		while relative_depth_level < self.max_search_depth:# and clock(self.timeout):
+		while relative_depth_level < self.max_search_depth and not found_leaf:# and clock(self.timeout):
 			should_pick_random_node = self.random_rollout_metric(self, current_node)
 			current_node_has_no_children = len(current_node.children.keys()) == 0
 
@@ -118,8 +119,9 @@ class monte_carlo_search_tree:
 			next_state, reward = model.dynamics(state, action_tensor)
 			policy, _ = model.prediction(state)
 			node.on_node_creation(next_state, reward, policy)
-		output_node = self.expand(node, model)
-		self.backpropgate(output_node)
+		for i in range(2 * self.max_search_depth * self.children_count):
+			output_node = self.expand(node, model)
+			self.backpropgate(output_node)
 		return output_node
 
 	def update_root(self, state, action):
@@ -160,3 +162,39 @@ class monte_carlo_search_tree:
 			game_state.value.append(best_node.value)
 			current_node = best_node
 		return game_state
+
+	def draw(self):
+		from graphviz import Digraph
+		dot = Digraph(comment='The search tree', format='png')
+		def create_node(node):
+			depth, action = node.depth, node.node_id
+			if action is None:
+				action = "root"
+			print(depth, action)
+			node_id = '{depth}_{action}'.format(depth=depth, action=action)
+			dot.node(node_id, 'depth {depth}, action {action}'.format(depth=depth, action=action))
+			return node_id
+		nodes = [self.root]
+		path_created = {
+
+		}
+		while 0 < len(nodes):
+			current_root = nodes.pop(0)
+			generaated_current_root = create_node(current_root)
+			for key, value in sorted(current_root.children.items(), key=lambda x: x[0]):
+				path_tuple = (generaated_current_root, create_node(value))
+				if path_tuple not in path_created:
+					path_created[path_tuple] = True
+					dot.edge(generaated_current_root, create_node(value))
+					nodes.append(value) 
+		dot.render('search-tree_{time}'.format(time=time.time()))#, view=True) 
+
+
+
+
+
+
+
+
+
+

@@ -1,6 +1,17 @@
 import numpy as np
 import random
 
+class min_max_node_tracker:
+	def __init__(self):
+		self.max = 0
+		self.min = 0
+
+#	@staticmethod
+#	def calulate_q(self):
+
+
+
+
 class node:
 	def __init__(self, parrent, node_id=None, hidden_state=None):
 		self.children = {}
@@ -30,6 +41,40 @@ class node:
 		c = np.sqrt(2)
 
 		return child_explored + c * np.sqrt(parrent_explored)
+
+	def upper_confidente_boundary(self):
+		self.c1 = 1.25
+		self.c2 = 19652
+
+		self.q_s_a = self.q
+		self.p_s_a = self.value
+
+		if self.parrent is None:
+			return 0
+
+		all_actions_sum = np.sum([
+			i.explored_count for i in self.parrent.children.values()
+		])
+		second_part = np.sqrt(
+			all_actions_sum
+		) / (1 + self.explored_count) * (
+			self.c1  + np.log(
+				 (all_actions_sum + self.c2 + 1)/ self.c2				
+			)
+		)
+		print(all_actions_sum, second_part)
+		return self.q_s_a + self.p_s_a * second_part
+
+	@property
+	def q(self):
+		explored = self.parrent.explored_count if self.parrent else 0
+		q = self.parrent.q if self.parrent else 0
+		parrent_visit_dot_parrent_q = explored * q + self.value
+		return parrent_visit_dot_parrent_q/(explored + 1)
+
+	@property
+	def N(self):
+		return self.parrent.explored_count + 1 if self.parrent else 0	
 
 	def on_node_creation(self, hidden_state, reward, policy):
 		"""
