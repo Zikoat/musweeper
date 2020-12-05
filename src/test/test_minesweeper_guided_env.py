@@ -1,49 +1,11 @@
+import itertools
+import random
 import subprocess
 import unittest
 import gym
 from ..envs.minesweeper_guided_env import MinesweeperGuidedEnv
 import ast
 import numpy as np
-
-# from minesweepr.minesweeper_util import generate_rules
-
-class SolverException(Exception):
-    pass
-
-def api_solve(payload):
-    try:
-        return ast.literal_eval(subprocess.run(
-            [
-                "C:/users/sscho/anaconda3/envs/mrgris/python.exe",
-                "-c",
-                "from minesweepr.minesweeper_util import api_solve;"+
-                "print(api_solve({}))".format(payload)
-            ],
-            capture_output=True,
-            check=True,
-            timeout=2
-        ).stdout.decode("utf-8"))
-    except subprocess.CalledProcessError as e:
-        raise SolverException("api_solve errored with message below:\n\n{}"
-                              .format(e.stderr.decode("utf-8")))
-
-
-def parse_coordinate(coordinate):
-    y, x = list(map(int, coordinate.split("-")))
-    return x, y
-
-
-def get_probability_matrix(result, width, height):
-    if "_other" in result:
-        matrix = np.array((width, height), result["_other"])
-    else:
-        matrix = np.empty((width, height))
-
-    for coordinate_string, mine_probability in result["solution"].items():
-        x, y = parse_coordinate(coordinate_string)
-        matrix[x-1, y-1] = mine_probability
-    assert not None in matrix
-    return matrix
 
 
 class MinesweeperGuidedEnvTest(unittest.TestCase):
@@ -130,18 +92,37 @@ xxxxxxxxxx""",
                          })
 
     def test_create_probability_matrix_from_solution(self):
-        board = "x11\nxxx"
-        total_mines = 1
-        result = api_solve({"board": board, "total_mines": total_mines})
-        width = 3
-        height = 2
+        self.fail()
+        for i in itertools.product([False, True], repeat=1):
+            env = MinesweeperGuidedEnv(3, 2, 1)
 
-        probability_matrix = get_probability_matrix(result, width, height)
-        expected_probability_matrix = np.array([[0, 0], [0, 0.5], [0, 0.5]])
+            if i[0]:
+                env.reset()
 
-        np.testing.assert_array_equal(expected_probability_matrix, probability_matrix)
+            env.mines = np.zeros((env.width, env.height))
+            env.mines[1, 1] = 1
+
+            env.step(2)
+            result = env.step(3)
+            print(result)
+
+            print(env.get_ascii_board())
+            print(env.render("terminal"))
+            print(np.array(env.render("rgb_array")).shape)
+            print(np.array(env.mines).shape)
+            print(np.array(env.open_cells).shape)
+            print(np.array(env._get_observation()).shape)
+            print("action space", env.action_space.n)
+            print(env.observation_space.shape)
 
 
+            self.assertEqual(env.render("terminal"), "x11\nxxx")
+            result = self.env.api_solve({"board": board, "total_mines": total_mines})
+
+            probability_matrix = self.env.get_probability_matrix(result)
+            expected_probability_matrix = np.array([[0, 0], [0, 0.5], [0, 0.5]])
+
+            np.testing.assert_array_equal(expected_probability_matrix, probability_matrix)
 
 
 if __name__ == '__main__':
