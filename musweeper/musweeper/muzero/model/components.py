@@ -16,14 +16,14 @@ class shared_backbone:
 
 class component_dynamics(nn.Module, shared_backbone):
 	"""
-	Description of the dynamics component of muzero 
+	Description of the dynamics component of Muzero 
 	the role of the dynamics component is to learn the effect of actions
 	in diffrent states.
 	"""
 	def __init__(self, representation_size):
 		super(component_dynamics, self).__init__()
 		shared_backbone.__init__(self)
-		self.shared_hidden_size = 256
+		self.shared_hidden_size = 64
 
 		self.preprocess_state = nn.Linear(representation_size, self.shared_hidden_size).to(self.device)
 		self.preprocess_action = nn.Linear(1, self.shared_hidden_size).to(self.device)
@@ -78,11 +78,14 @@ class component_predictions(nn.Module, shared_backbone):
 		super(component_predictions, self).__init__()
 		shared_backbone.__init__(self)
 
-		self.preprocess_state = nn.Linear(representation_size, 256).to(self.device)
-		self.combined = nn.Linear(256, 128).to(self.device)
+		main_hidden_layer_size = 128
+		second_hidden_layer_size = main_hidden_layer_size // 2
 
-		self.value = nn.Linear(128, 1).to(self.device)
-		self.policy = nn.Linear(128, action_size).to(self.device)
+		self.preprocess_state = nn.Linear(representation_size, main_hidden_layer_size).to(self.device)
+		self.combined = nn.Linear(main_hidden_layer_size, second_hidden_layer_size).to(self.device)
+
+		self.value = nn.Linear(second_hidden_layer_size, 1).to(self.device)
+		self.policy = nn.Linear(second_hidden_layer_size, action_size).to(self.device)
 
 	def forward(self, state):
 		"""
@@ -124,9 +127,12 @@ class component_representation(nn.Module, shared_backbone):
 		super(component_representation, self).__init__()
 		shared_backbone.__init__(self)
 
-		self.preprocess_state = nn.Linear(env_size, 256).to(self.device)
-		self.combined = nn.Linear(256, 128).to(self.device)
-		self.representation = nn.Linear(128, representation_size).to(self.device)
+		main_hidden_layer_size = 128
+		second_hidden_layer_size = main_hidden_layer_size // 2
+
+		self.preprocess_state = nn.Linear(env_size, main_hidden_layer_size).to(self.device)
+		self.combined = nn.Linear(main_hidden_layer_size, second_hidden_layer_size).to(self.device)
+		self.representation = nn.Linear(second_hidden_layer_size, representation_size).to(self.device)
 
 	def forward(self, state):
 		"""

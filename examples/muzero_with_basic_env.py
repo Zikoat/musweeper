@@ -36,10 +36,10 @@ def train(model, env):
 	optimizer = optim.Adam(model.parameters(), lr=3e-4, weight_decay=0.01)
 
 	game_replay_buffer = replay_buffer()
-	timeout = clock(60 * 5)
+	timeout = clock(60 * 60)
 	i = 0
 	print_interval = 15
-	update_interval = 10
+	update_interval = 5
 	selfplay_interval = 5
 
 	report = model_report("bragearn@stud.ntnu.no")
@@ -58,14 +58,14 @@ def train(model, env):
 			total_loss.backward()
 			optimizer.step()
 			report.add_variable("loss over time",  total_loss.item())
-		
+		"""
 		if i % selfplay_interval:
 			optimizer.zero_grad()
 			total_loss = selfplay_single_player(model, env)
 			total_loss.backward()
 			optimizer.step()
 			report.add_variable("loss over time (selfplay)",  total_loss.item())
-
+		"""
 		sum_game_reward =  sum([
 			event.reward for event in last_game.history
 		])

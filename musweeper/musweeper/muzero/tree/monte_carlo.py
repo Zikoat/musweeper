@@ -120,10 +120,12 @@ class monte_carlo_search_tree:
 			node.on_node_creation(next_state, reward, policy, value_function)
 
 		delta_depth = 0
-		while delta_depth < self.max_search_depth:
+		visited_nodes = 0
+		while delta_depth < self.max_search_depth and 30 < visited_nodes:
 			output_node = self.expand(node, model)
 			delta_depth = (output_node.depth - node.depth)
 			self.backpropgate(output_node, delta_depth)
+			visited_nodes += 1
 		return output_node
 
 	def update_root(self, state, action):
