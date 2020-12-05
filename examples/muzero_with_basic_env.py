@@ -18,12 +18,12 @@ optimizer = optim.Adam(model.parameters())
 
 print(model)
 
-@profile
+#@profile
 def train():
 	game_score = []
 	sum_loss = 0
 
-	replay_buffer = reply_buffer()
+	game_replay_buffer = replay_buffer()
 	#for i in range(1000):
 	start = time.time()
 	i = 0
@@ -35,7 +35,7 @@ def train():
 		model.reset()
 		state = env.reset()
 		done = False
-		game_history = None
+		game_history = game_event_history()
 		sum_score = 0
 		while not done:
 			output = model.plan_action(state)
@@ -43,21 +43,24 @@ def train():
 			best_action = best_node.node_id
 			best_value = best_node.value
 
-			game_history = model.tree.get_rollout_path(game_state=game_history)
-			state, reward, done = env.step(best_action)
-
+			model.tree.get_rollout_path()
+			new_state, reward, done = env.step(best_action)
+			
 			model.update(state, best_action)
-			game_history.actual_reward.append(torch.tensor([reward]).reshape((1, -1)))
-			game_history.state.append(state.reshape((1, -1)))
-			game_history.actual_action.append(best_action)
-			game_history.actual_value.append(best_value)
+			game_history.add(
+				reward=torch.tensor([reward]).reshape((1, -1)),
+				action=best_action,
+				value=best_value,
+				state=state.reshape((1, -1))
+			)
+			state = new_state
 			sum_score += reward
 
-		replay_buffer.add(game_history)
+		game_replay_buffer.add(game_history)
 
 		optimizer.zero_grad()
 		total_loss = transform_input(torch.tensor(0, dtype=torch.float64))
-		for game in replay_buffer.get_batch():
+		for game in game_replay_buffer.get_batch():
 			total_loss += loss_from_game(model, game)
 		total_loss.backward()
 		optimizer.step()

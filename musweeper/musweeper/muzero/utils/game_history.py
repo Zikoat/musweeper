@@ -1,24 +1,20 @@
 from collections import deque
 import random
+from collections import namedtuple
 
-class game_history:
+class game_event_history:
 	def __init__(self):
-		self.reward = []
-		self.actual_reward = []
+		self.history = []
+		self.event = namedtuple('event', ['reward', 'action', 'value', 'state'])
 
-		self.state = []
-
-		self.action = []
-		self.actual_action = []
-
-		self.actual_value = []
-		self.value = []
+	def add(self, reward, action, value, state=None):
+		self.history.append(self.event(reward, action, value, state))
 
 	@property
 	def length(self):
-		return len(self.state)
+		return len(self.history)
 
-class reply_buffer:
+class replay_buffer:
 	def __init__(self):
 		self.memory = deque(maxlen=2000)
 		self.batch_size = 32

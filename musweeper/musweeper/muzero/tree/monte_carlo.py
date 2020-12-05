@@ -160,12 +160,14 @@ class monte_carlo_search_tree:
 			the game history from the search tree
 		"""
 		current_node = self.root
-		game_state = game_history() if game_state is None else game_state
+		game_state = game_event_history() if game_state is None else game_state
 		while 0 < len(current_node.children.keys()):
 			best_node = max(current_node.children.items(), key=lambda x: x[1].value)[1]
-			game_state.reward.append(best_node.reward)
-			game_state.action.append(best_node.policy)
-			game_state.value.append(best_node.value)
+			game_state.add(
+				reward=best_node.reward,
+				action=best_node.policy,
+				value=best_node.value
+			)
 			current_node = best_node
 		return game_state
 

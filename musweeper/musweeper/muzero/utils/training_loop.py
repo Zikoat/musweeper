@@ -21,21 +21,22 @@ def loss_from_game(model, game_history):
 		I think you can cache the original results. Try to find that out.
 		"""
 		total_loss = transform_input(torch.tensor(0, dtype=torch.float64))
-		model.plan_action(transform_input(game_history.state[t]))
+		assert game_history.history[t].state is not None, "state should not be none {}".format(game_history.history[t])
+		model.plan_action(transform_input(game_history.history[t].state))
 		predicted_rollout_game_history = model.tree.get_rollout_path()
 		# since we moved over to UCB, it won't evenly explore 
-		assert len(predicted_rollout_game_history.reward) > 0, "wrong size {} expected {}".format(len(predicted_rollout_game_history.reward), K)
-		for k in range(min(K, len(predicted_rollout_game_history.reward))):
-			predicted_reward = transform_input(predicted_rollout_game_history.reward[k].float())
-			actual_reward = transform_input(game_history.actual_reward[t + k].float())
+		assert predicted_rollout_game_history.length > 0, "zero output, something is wrong in the search tree"
+		for k in range(min(K, predicted_rollout_game_history.length)):
+			predicted_reward = transform_input(predicted_rollout_game_history.history[k].reward.float())
+			actual_reward = transform_input(game_history.history[t + k].reward.float())
 
-			predicted_action = transform_input(predicted_rollout_game_history.action[k])
-			actual_action = transform_input(torch.tensor([game_history.actual_action[t + k]]))
+			predicted_action = transform_input(predicted_rollout_game_history.history[k].action)
+			actual_action = transform_input(torch.tensor([game_history.history[t + k].action]))
 
-			predicted_value =  transform_input(torch.tensor([float(predicted_rollout_game_history.value[k])], dtype=torch.float64))
-			actual_value = transform_input(torch.tensor([float(game_history.actual_value[t + k])], dtype=torch.float64))
+			predicted_value =  transform_input(torch.tensor([float(predicted_rollout_game_history.history[k].value)], dtype=torch.float64))
+			actual_value = transform_input(torch.tensor([float(game_history.history[t + k].value)], dtype=torch.float64))
 
 			total_loss += loss_error(predicted_reward, actual_reward) + loss_error_actions(predicted_action, actual_action) + loss_error(predicted_value, actual_value)
 		entire_loss += total_loss	
-		model.update(None, game_history.actual_action[t])
+		model.update(None, game_history.history[t].action)
 	return entire_loss
