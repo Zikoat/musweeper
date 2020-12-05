@@ -1,7 +1,7 @@
 from unittest import TestCase
 import gym.wrappers.tests
 import gym_minesweeper
-from ..agents.random_agent import RandomAgent
+from src.agents.random_agent import RandomAgent
 from src.evaluate_agent import evaluate_agent
 
 

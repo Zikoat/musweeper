@@ -30,7 +30,7 @@ class MinesweeperGuidedEnv(MinesweeperEnv):
         return observation, *output
 
     def get_probability_matrix(self):
-        if not self.enable_guide:
+        if not self.enable_guide or self._game_over():
             return np.empty((self.width, self.height))
 
         ascii_board = self.get_ascii_board()
@@ -66,6 +66,7 @@ class MinesweeperGuidedEnv(MinesweeperEnv):
                 timeout=2
             ).stdout.decode("utf-8"))
         except subprocess.CalledProcessError as e:
+            print(e.stdout)
             raise SolverException("api_solve errored with message below:\n\n{}"
                                   .format(e.stderr.decode("utf-8")))
 

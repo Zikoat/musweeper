@@ -1,10 +1,7 @@
 import itertools
-import random
-import subprocess
 import unittest
 import gym
-from ..envs.minesweeper_guided_env import MinesweeperGuidedEnv
-import ast
+from src.envs.minesweeper_guided_env import MinesweeperGuidedEnv, SolverException
 import numpy as np
 
 
@@ -25,7 +22,7 @@ class MinesweeperGuidedEnvTest(unittest.TestCase):
 
     def test_solve_with_rules(self):
         rules = {"rules":[{"num_mines":1,"cells":["2-1"]},{"num_mines":0,"cells":["1-1"]},{"num_mines":0,"cells":[]}],"total_cells":2,"total_mines":1}
-        result = api_solve(rules)
+        result = self.env.api_solve(rules)
 
         print(rules)
         print(result)
@@ -35,11 +32,11 @@ class MinesweeperGuidedEnvTest(unittest.TestCase):
         self.assertGreaterEqual(result["processing_time"], 0, "The processing time is wrong")
 
     def test_solve_error(self):
-        self.assertRaises(SolverException, lambda: api_solve("wrong input"))
+        self.assertRaises(SolverException, lambda: self.env.api_solve("wrong input"))
 
     def test_inconsistency(self):
         payload = {"rules":[{"num_mines":0,"cells":["1-1"]},{"num_mines":0,"cells":[]}],"total_cells":1,"total_mines":1}
-        output = api_solve(payload)
+        output = self.env.api_solve(payload)
         print(output)
         print("is of type", type(output))
         self.assertIsNone(output["solution"], None)
@@ -58,7 +55,7 @@ xxxxxxxxxx
 xxxxxxxxxx
 xxxxxxxxxx""",
             "total_mines": 10}
-        result = api_solve(board)
+        result = self.env.api_solve(board)
         print(result)
         self.assertGreaterEqual(result["processing_time"], 0)
 
