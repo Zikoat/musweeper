@@ -6,8 +6,11 @@ class game_event_history:
 	def __init__(self):
 		self.history = []
 		self.event = namedtuple('event', ['reward', 'action', 'value', 'state'])
+		self.historic_reward = 0
 
 	def add(self, reward, action, value, state=None):
+		if type(reward) in [int, float]:
+			self.historic_reward += reward
 		self.history.append(self.event(reward, action, value, state))
 
 	@property
