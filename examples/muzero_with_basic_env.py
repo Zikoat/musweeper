@@ -27,9 +27,10 @@ def train():
 	#for i in range(1000):
 	start = time.time()
 	i = 0
-	while (time.time() - start) < 60 * 15 and i < 1000:
-		if i % 5 == 0 and i > 0:
-			print('%d: min=%.2f median=%.2f max=%.2f eval=%.2f, sum of 100 last games=%.2f, loss=%.2f' % (i, min(game_score), game_score[len(game_score)//2], max(game_score), sum(game_score)/len(game_score), sum(game_score[-100:]), sum_loss))
+	print_size = 15
+	while (time.time() - start) < 60 * 60 and i < 1000:
+		if i % print_size == 0 and i > 0:
+			print('%d: min=%.2f median=%.2f max=%.2f eval=%.2f, sum of %d last games=%.2f, loss=%.2f' % (i, min(game_score), game_score[len(game_score)//2], max(game_score), sum(game_score)/len(game_score), print_size, sum(game_score[-print_size:]), sum_loss))
 			sum_loss = 0
 		model.reset()
 		state = env.reset()
@@ -68,4 +69,3 @@ def train():
 	print(len(game_score))
 
 train()
-
