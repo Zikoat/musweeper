@@ -19,10 +19,10 @@ class MinesweeperGuidedEnv(MinesweeperEnv):
 
     def step(self, action):
         observation, *output = super(MinesweeperGuidedEnv, self).step(action)
-        observation.append(self.get_probability_matrix())
+        observation = np.array([observation, self.get_probability_matrix()])
         return observation, *output
 
     def get_probability_matrix(self):
 
-        return None
+        return np.zeros((self.width, self.height))
 
