@@ -4,14 +4,7 @@ from .node import *
 import torch
 from ..utils.game_history import *
 import time
-
-class clock:
-	def __init__(self, timeout):
-		self.start = time.time()
-		self.end = self.start + timeout
-
-	def __call__(self):
-		return self.start < self.end
+from graphviz import Digraph
 
 class monte_carlo_search_tree:
 	def __init__(self, root_state, max_search_depth, action_size=2, random_rollout_metric=None):
@@ -19,6 +12,7 @@ class monte_carlo_search_tree:
 		self.timeout = 10
 
 		self.root = node(parrent=None, hidden_state=root_state)
+		self.originale_root = self.root
 		self.children_count = action_size
 
 		# coin-flip
@@ -75,12 +69,13 @@ class monte_carlo_search_tree:
 		while leaf_node is not None:
 			node_level_diff = depth - leaf_node.depth
 			cumulative_discounted_reward += (discount ** (node_level_diff) * leaf_node.reward) + leaf_node.value_of_model * discount ** visited_nodes
+
 			leaf_node.explored_count += 1
 			visited_nodes += 1
+
 			leaf_node.cumulative_discounted_reward = cumulative_discounted_reward
 			leaf_node = leaf_node.parrent
-#			leaf_node.value += value
-#			value = leaf_node.reward + discount * value
+
 		return cumulative_discounted_reward
 
 	def select(self, nodes):
@@ -117,12 +112,13 @@ class monte_carlo_search_tree:
 		"""
 		if type(node) == int:
 			node = self.root.create_children_if_not_exist(node)
+
 		if model:
 			state, action_tensor = self.root.hidden_state.reshape((1, -1)), torch.tensor([node.node_id]).float().reshape((1, -1))
 			next_state, reward = model.dynamics(state, action_tensor)
 			policy, value_function = model.prediction(state)
 			node.on_node_creation(next_state, reward, policy, value_function)
-#		for _ in range(2 * self.max_search_depth * self.children_count):
+
 		delta_depth = 0
 		while delta_depth < self.max_search_depth:
 			output_node = self.expand(node, model)
@@ -171,38 +167,37 @@ class monte_carlo_search_tree:
 			current_node = best_node
 		return game_state
 
-	def draw(self):
-		from graphviz import Digraph
-		dot = Digraph(comment='The search tree', format='png')
-		def create_node(node):
+	def construct_tree(self, dot, node, show_only_used_edges):
+		if node is None:
+			return None
+
+		def create_node(node, create=True):
 			depth, action = node.depth, node.node_id
 			if action is None:
 				action = "root"
-			print(depth, action)
-			node_id = '{depth}_{action}'.format(depth=depth, action=action)
-			dot.node(node_id, 'depth {depth}, action {action}'.format(depth=depth, action=action))
+			state = node.environment_state if node.environment_state is not None else None
+			score = node.score_metric()
+			parrent_action = node.parrent.node_id if node.parrent is not None else "seed"
+
+			node_id = '{depth}_{parrent_action}_{action}_{state}'.format(depth=depth, parrent_action=parrent_action, action=action, state=state)
+			if create:
+				ucb = node.upper_confidence_boundary()
+				ucb_reason = node.ucb_score_parts
+				dot.node(node_id, 'depth {depth}, action {action}, score {score}, env state: {state}, ucb = {ucb}, ucb_reason = {ucb_reason}'.format(depth=depth, action=action, score=score, state=state, ucb=ucb, ucb_reason=ucb_reason), color='black' if state is None else 'green')
 			return node_id
-		nodes = [self.root]
-		path_created = {
 
-		}
-		while 0 < len(nodes):
-			current_root = nodes.pop(0)
-			generaated_current_root = create_node(current_root)
-			for key, value in sorted(current_root.children.items(), key=lambda x: x[0]):
-				path_tuple = (generaated_current_root, create_node(value))
-				if path_tuple not in path_created:
-					path_created[path_tuple] = True
-					dot.edge(generaated_current_root, create_node(value))
-					nodes.append(value) 
-		dot.render('search-tree_{time}'.format(time=time.time()))#, view=True) 
+		for child_nodes in node.children.values():
+			path_tuple = (create_node(node, create=False), create_node(child_nodes, create=False))
+				
+			self.construct_tree(dot, child_nodes, show_only_used_edges)
+			if show_only_used_edges and "none" in path_tuple[1].lower() and "none" in path_tuple[0].lower():
+				continue
+			generated_current_root = create_node(node, create=True)
+			dot.edge(generated_current_root, create_node(child_nodes))
 
-
-
-
-
-
-
-
-
-
+	def draw(self, show_only_used_edges=False):
+		dot = Digraph(comment='The search tree', format='png')
+		self.construct_tree(dot, self.originale_root, show_only_used_edges)
+		file_name = 'search-tree_{time}'.format(time=time.time())
+		dot.render(file_name)
+		return file_name + '.png'

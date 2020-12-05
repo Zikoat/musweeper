@@ -63,6 +63,8 @@ class TestMonteCarlo(unittest.TestCase):
 		# since the reward = 1 and discount=1, the total value should be the sum of length
 		expected_reward = (max_search_depth + 1) * 2
 		assert expected_reward == tree.backpropgate(final_expanded_node, depth=max_search_depth, discount=1)
+		for child_nodes in root.children:
+			assert 0 < child_nodes.upper_confidence_boundary()
 
 if __name__ == '__main__':
 	unittest.main()

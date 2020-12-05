@@ -5,9 +5,11 @@ import os
 
 path = os.path.dirname(os.path.abspath(__file__))
 readme_path = os.path.join(path, "../README.md")
-with open(readme_path, "r", encoding="utf-8") as fh:
-    long_description = fh.read()
-
+if os.path.isfile(readme_path):
+    with open(readme_path, "r", encoding="utf-8") as fh:
+        long_description = fh.read()
+else:
+    long_description = None
 print("the packages are:")
 print(setuptools.find_packages())
 
@@ -25,6 +27,7 @@ setuptools.setup(
         'torch',
         'numpy',
         'graphviz',
-        'line_profiler'
+        'line_profiler',
+        'gym'
     ]
 )

@@ -1,10 +1,11 @@
 import numpy as np
 import random
+import torch
 
 class min_max_node_tracker:
 	def __init__(self):
-		self.max = 0
-		self.min = 0
+		self.max = float('-inf')
+		self.min = float('inf')
 
 	def normalized(self, node_Q):
 		"""
@@ -20,7 +21,9 @@ class min_max_node_tracker:
 		float
 			normalized score to [0, 1]
 		"""
-		return (node_Q - self.min)/ (self.max - self.min)
+		if self.min != self.max:
+			return (node_Q - self.min)/ (self.max - self.min)
+		return node_Q
 
 	def update(self, node_q):
 		"""
@@ -54,6 +57,7 @@ class node:
 		self._value = 0
 		self.explored_count = 0
 		self.wins_count = 0
+		self.outcome = 0
 
 		self.reward = 0
 		self.policy = None
@@ -62,13 +66,17 @@ class node:
 		self.cumulative_discounted_reward = 0
 		self.has_init = False
 
+
 		self.hidden_state = hidden_state
 		self.environment_state = None
 
 		self.depth = 0 if parrent is None else (parrent.depth + 1)
 
 		self.available_children_paths = None
-		self.score_metric = self.upper_confidence_boundary #search_value_exploration_exploration
+		self.score_metric = self.upper_confidence_boundary
+		self.ucb_score_parts = [
+
+		]
 
 	def add_exploration_noise(self):
 		"""
@@ -89,7 +97,7 @@ class node:
 		Returns
 		-------
 		float
-			the ndoe score
+			the node score
 		"""
 		parrent_explored = np.log2(self.parrent.explored_count)/self.explored_count if self.parrent.explored_count != 1 and self.explored_count != 0 else 0
 		child_explored = self.wins_count / self.explored_count if self.explored_count > 0 else 0
@@ -119,15 +127,27 @@ class node:
 		all_actions_sum = np.sum([
 			i.explored_count for i in self.parrent.children.values()
 		])
-		second_part = np.sqrt(
-			all_actions_sum
-		) / (1 + self.explored_count) * (
-			self.c1  + np.log(
-				 (all_actions_sum + self.c2 + 1)/ self.c2				
-			)
-		)
-		print(self.q_s_a , self.p_s_a , all_actions_sum, second_part, self.parrent.children.values(), self.parrent)
-		return self.q_s_a + self.p_s_a * second_part
+		second_part_numerator_1 = np.sqrt(all_actions_sum)
+		second_part_denominator_1 = (1 + self.explored_count)
+
+		second_part_numerator_2 = (all_actions_sum + self.c2 + 1)
+		second_part_denominator_2 = self.c2
+
+		second_part = second_part_numerator_1 / second_part_denominator_1  * (self.c1 + np.log(second_part_numerator_2 / second_part_denominator_2))
+
+		value = self.q_s_a + self.p_s_a * second_part
+		assert type(value) in [float, int, np.float64], "bad type {}, {}".format(type(value), value)
+		self.ucb_score_parts = [
+			self.q_s_a,
+			self.p_s_a,
+			all_actions_sum,
+			second_part_numerator_1,
+			second_part_denominator_1,
+			second_part_numerator_2,
+			second_part_denominator_2,
+			second_part
+		]
+		return value
 
 	@property
 	def q(self):
@@ -140,10 +160,15 @@ class node:
 		float
 			node value score
 		"""
-		explored = self.parrent.explored_count if self.parrent else 0
-		q = self.parrent.q if self.parrent else 0
-		parrent_visit_dot_parrent_q = explored * q + self.cumulative_discounted_reward
-		return parrent_visit_dot_parrent_q/(explored + 1)
+		reward = self.reward.item() if torch.is_tensor(self.reward) else self.reward
+		value = self.min_max_node_tracker.normalized(
+			self.node_value()
+		)
+		return reward + value
+#		explored = self.parrent.explored_count if self.parrent else 0
+#		q = self.parrent.q if self.parrent else 0
+#		parrent_visit_dot_parrent_q = explored * q# + (self.cumulative_discounted_reward.item() if torch.is_tensor(self.cumulative_discounted_reward) else self.cumulative_discounted_reward)
+#		return parrent_visit_dot_parrent_q/(explored + 1)
 
 	@property
 	def N(self):
@@ -163,8 +188,13 @@ class node:
 
 	@value.setter
 	def value(self, value):
-		self._value = value
-		self.min_max_node_tracker.update(value)
+		self._value = value.item() if torch.is_tensor(value) else value
+		self.min_max_node_tracker.update(self.node_value())
+
+	def node_value(self):
+		if self.explored_count == 0:
+			return 0
+		return self.value / self.explored_count
 
 	def on_node_creation(self, hidden_state, reward, policy, value):
 		"""

@@ -2,71 +2,91 @@ from musweeper.muzero.utils.basic_env import *
 from musweeper.muzero.model.muzero import *
 from musweeper.muzero.utils.training_loop import *
 from musweeper.muzero.model.components import transform_input
+from musweeper.muzero.model.selfplay import play_game, selfplay_single_player
 import time
 import torch.optim as optim
-import atexit
-import line_profiler
-profile = line_profiler.LineProfiler()
-atexit.register(profile.print_stats)
 
+class clock:
+	def __init__(self, timeout):
+		self.start = time.time()
+		self.end = self.start + timeout
 
-env = BasicEnv()
+	def __call__(self):
+		return self.end < time.time()
 
-representation, dynamics, prediction = create_model(env)
-model = muzero(env, representation, dynamics, prediction, max_search_depth=3)
-optimizer = optim.Adam(model.parameters(), lr=3e-4, weight_decay=0.01)
+def see_model_search_tree(model, env):
+	model.reset()
+	done = False
+	observation = env.reset()
+	original_root = None
+	while not done:
+		output = model.plan_action(observation)
+		if original_root is None:
+			original_root = model.tree.root
+		best_node = max(output, key=lambda node: node.value)
+		best_action = best_node.node_id
+		observation, reward, done = env.step(best_action)
+		model.update(observation, best_action)
+	return [model.tree.draw(), model.tree.draw(show_only_used_edges=True)]
 
-#@profile
-def train():
+def train(model, env):
+	from hydra.reports.model_evaluation_report import model_report
+
 	game_score = []
-	sum_loss = 0
+	optimizer = optim.Adam(model.parameters(), lr=3e-4, weight_decay=0.01)
 
 	game_replay_buffer = replay_buffer()
-	#for i in range(1000):
-	start = time.time()
+	timeout = clock(60 * 5)
 	i = 0
-	print_size = 15
-	while (time.time() - start) < 60 * 60 and i < 1000:
-		if i % print_size == 0 and i > 0:
-			print('%d: min=%.2f median=%.2f max=%.2f eval=%.2f, sum of %d last games=%.2f, loss=%.2f' % (i, min(game_score), game_score[len(game_score)//2], max(game_score), sum(game_score)/len(game_score), print_size, sum(game_score[-print_size:]), sum_loss))
-			sum_loss = 0
-		model.reset()
-		state = env.reset()
-		done = False
-		game_history = game_event_history()
-		sum_score = 0
-		while not done:
-			output = model.plan_action(state)
-			best_node = max(output, key=lambda x: x.value)
-			best_action = best_node.node_id
-			best_value = best_node.value
+	print_interval = 15
+	update_interval = 10
+	selfplay_interval = 5
 
-			model.tree.get_rollout_path()
-			new_state, reward, done = env.step(best_action)
-			
-			model.update(state, best_action)
-			game_history.add(
-				reward=torch.tensor([reward]).reshape((1, -1)),
-				action=best_action,
-				value=best_value,
-				state=state.reshape((1, -1))
-			)
-			state = new_state
-			sum_score += reward
+	report = model_report("bragearn@stud.ntnu.no")
+	while not timeout() and i < 1000:
+		if i % print_interval == 0 and i > 0:
+			report.add_note('%d: min=%.2f median=%.2f max=%.2f eval=%.2f, sum of %d last games=%.2f' % (i, min(game_score), game_score[len(game_score)//2], max(game_score), sum(game_score)/len(game_score), print_interval, sum(game_score[-print_interval:])))
+			report.add_variable("avg score last {print_interval} games".format(print_interval=print_interval), sum(game_score[-print_interval:])/print_interval)
 
-		game_replay_buffer.add(game_history)
+		last_game = play_game(model, env)
+		game_replay_buffer.add(last_game)
+		if i % update_interval == 0:
+			optimizer.zero_grad()
+			total_loss = transform_input(torch.tensor(0, dtype=torch.float64))
+			for game in game_replay_buffer.get_batch():
+				total_loss += loss_from_game(model, game)
+			total_loss.backward()
+			optimizer.step()
+			report.add_variable("loss over time",  total_loss.item())
+		
+		if i % selfplay_interval:
+			optimizer.zero_grad()
+			total_loss = selfplay_single_player(model, env)
+			total_loss.backward()
+			optimizer.step()
+			report.add_variable("loss over time (selfplay)",  total_loss.item())
 
-		optimizer.zero_grad()
-		total_loss = transform_input(torch.tensor(0, dtype=torch.float64))
-		for game in game_replay_buffer.get_batch():
-			total_loss += loss_from_game(model, game)
-		total_loss.backward()
-		optimizer.step()
-		game_score.append(sum_score)
-		sum_loss += total_loss.item()
+		sum_game_reward =  sum([
+			event.reward for event in last_game.history
+		])
+		report.add_variable("reward over time", sum_game_reward)
+		game_score.append(sum_game_reward)
 		i += 1
-	print(sum_loss)
-	print(game_score)
-	print(len(game_score))
+	sample_game = play_game(model, env)
+	for event in sample_game.history:
+		report.add_note('state : {state}, action: {action}'.format(state=event.state, action=event.action))
+	for tree in see_model_search_tree(model, env):
+		report.add_plot(tree)
+	for key, value in model.prediction.debugger.get_last_round():
+		report.add_note('debug from predictions {}'.format(key))
+		for layer in value:
+			report.add_note(str(layer))
+	print(model.prediction.debugger.get_last_round())
+	report.send_report()
 
-train()
+if __name__ == "__main__":
+	env = BasicEnv()
+
+	representation, dynamics, prediction = create_model(env)
+	model = muzero(env, representation, dynamics, prediction, max_search_depth=3)
+	train(model, env)

@@ -2,6 +2,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch
 from torch.nn.modules import transformer
+from ..utils.debugger import *
 
 def transform_input(tensor):
 	if not tensor.is_cuda and torch.cuda.is_available():
@@ -11,6 +12,7 @@ def transform_input(tensor):
 class shared_backbone:
 	def __init__(self):
 		self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+		self.debugger = model_debugger()
 
 class component_dynamics(nn.Module, shared_backbone):
 	"""
@@ -100,10 +102,17 @@ class component_predictions(nn.Module, shared_backbone):
 		"""
 		if len(state.shape) == 1:
 			state = state.reshape((1, -1))
+		self.debugger.start_forward("predictions")
 		state = transform_input(state)
+		self.debugger.add_element("predictions", state)
 		state = torch.sigmoid(self.preprocess_state(state))
+		self.debugger.add_element("predictions", state)
 		combined = torch.sigmoid(self.combined(state))
-		return torch.sigmoid(self.policy(combined)), torch.sigmoid(self.value(combined))
+		self.debugger.add_element("predictions", combined)
+		policy, value = torch.sigmoid(self.policy(combined)), torch.sigmoid(self.value(combined))
+		self.debugger.add_element("predictions", (policy, value))
+		self.debugger.stop_forward("predictions")
+		return policy, value
 
 class component_representation(nn.Module, shared_backbone):
 	"""

@@ -23,7 +23,7 @@ class BasicEnv(gym.Env):
 			the output state
 		"""
 		state = torch.zeros((self.state_size))
-		state[self.round % 2 == 0] = 1
+		state[int(self.round % 2 == 0)] = 1
 		return state
 
 	def reset(self):

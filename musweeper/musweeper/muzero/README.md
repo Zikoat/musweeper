@@ -2,5 +2,14 @@
 - [x] implement monte carlo tree (with tsts)
 - [x] implement model mock (with tests)
 
-- [ ] implement better way of doing replay buffering
-- [ ] implement self play
+- [x] implement better way of doing replay buffering
+- [X] implement self play
+
+
+## things to debug
+- [ ] model input and output
+- [ ] ucb score
+    - [ ] values are high, see if there is something wrongly computed by 
+- [ ] the target values are wrong
+    - [ ] I looked at the psuedo code connected to the paper and seems like the value is not the same that we calculate during the MCTS. So fix that.
+    - 

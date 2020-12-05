@@ -65,7 +65,7 @@ class TestNode(unittest.TestCase):
         score_node_with_high_prior = childreN_node_with_high_prior.upper_confidence_boundary()
 
         # monte carlo will faveour model that has been explored with win rate over failed models
-        assert score_node_has_explored < score_node_with_high_prior
+        assert score_node_with_high_prior < score_node_has_explored 
 
     def test_explored_with_high_win_rate_vs_low(self):
         """
@@ -99,16 +99,22 @@ class TestNode(unittest.TestCase):
 
     def test_node_min_max_tracker(self):
         parent_node = node(None)
+        parent_node.explored_count = 1
         parent_node.value = 10
 
         child_node = node(parent_node)
+        child_node.explored_count = 1
         child_node.value = 20
 
-        assert parent_node.min_max_node_tracker.normalized(10) == 0.5
+        assert parent_node.min_max_node_tracker.min == 10
+        assert parent_node.min_max_node_tracker.max == 20
+
+        assert parent_node.min_max_node_tracker.normalized(10) == 0
+        assert parent_node.min_max_node_tracker.normalized(15) == 0.5
         assert parent_node.min_max_node_tracker.normalized(20) == 1
 
         # same object should be shared
-        assert child_node.min_max_node_tracker.normalized(10) == 0.5
+        assert child_node.min_max_node_tracker.normalized(10) == 0
         assert child_node.min_max_node_tracker.normalized(20) == 1
 
 

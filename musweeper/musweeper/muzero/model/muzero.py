@@ -12,17 +12,11 @@ def create_model(env, testing=False, config={}):
 		prediction = mock_model(custom_generator=lambda hidden_state: (torch.rand(action_size, requires_grad=True), torch.rand(1, requires_grad=True)) )
 		representation = mock_model(custom_generator=lambda state: torch.rand(representation_size, requires_grad=True))
 		return representation, dynamics, prediction
-
 	else:
 		dynamics = component_dynamics(representation_size)
 		prediction = component_predictions(representation_size, action_size)
 		representation = component_representation(env_size, representation_size)
 		return representation, dynamics, prediction
-
-import atexit
-import line_profiler
-profile = line_profiler.LineProfiler()
-atexit.register(profile.print_stats)
 
 class muzero(nn.Module):
 	"""
@@ -42,8 +36,8 @@ class muzero(nn.Module):
 
 		self.max_search_depth = max_search_depth
 		self.tree = None
+		self.use_naive_search = False
 
-	@profile
 	def plan_action(self, current_state):
 		"""
 		at each state the model will do a roll out with the monte carlo tree and the learned model
@@ -52,6 +46,7 @@ class muzero(nn.Module):
 		3 - When we find a leaf node / episode is over, we store the path in a replay buffer (used for training)
 		"""
 		internal_muzero_state = self.representation(current_state)
+
 		if self.tree is None:
 			self.tree = monte_carlo_search_tree(internal_muzero_state, self.max_search_depth, action_size=self.action_size)
 			self.tree.root.environment_state = current_state
@@ -66,9 +61,6 @@ class muzero(nn.Module):
 	def reset(self):
 		self.tree = None
 
-	def train(self, replay_buffer):
-		pass
-
 	def think(self, state):
-		policy, _ = self.prediction(state)
+		policy, _ = self.prediction(self.representation(state))
 		return torch.argmax(policy), policy
