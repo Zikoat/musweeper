@@ -59,3 +59,21 @@ class BasicEnv(gym.Env):
 
 		self.round += 1
 		return self.state, reward, (self.round > self.time_out)
+
+	def value(self, action, t):
+		"""
+		Value function of each state
+
+		Parameters
+		----------
+		action : int
+			the taken taken
+		t : int
+			timestemp
+
+		Returns
+		-------
+		int
+			reward -1 for bad action and 1 for good action
+		"""
+		return 1 if bool(action == (t % 2 == 0)) else -1

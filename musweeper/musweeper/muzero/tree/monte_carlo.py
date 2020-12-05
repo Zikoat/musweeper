@@ -44,23 +44,21 @@ class monte_carlo_search_tree:
 		current_node = self.root if current_node is None else current_node
 		found_leaf = False
 		current_node.add_exploration_noise()
-		# TODO : add "or" for if current node is a terminated state 
-		while relative_depth_level < self.max_search_depth and not found_leaf:# and clock(self.timeout):
+
+		while relative_depth_level < self.max_search_depth and not found_leaf:
 			should_pick_random_node = self.random_rollout_metric(self, current_node)
 			current_node_has_no_children = len(current_node.children.keys()) == 0
 
 			if (should_pick_random_node or current_node_has_no_children) and len(current_node.children) != self.children_count:
 				# TODO : add something to invalidate invalid states to make search easier when bootstraping
 				new_node = current_node.get_a_children_node(self.children_count)
-				# TODO : you should actually backpropgate as soon as a leaf is found
 				found_leaf = True
 				if model is not None:
-					state, action_tensor = current_node.hidden_state.reshape((1, -1)), torch.tensor([new_node.node_id]).float().reshape((1, -1))
+					# when a new node is found, we assign reward and policy from the model (see Expansion in Appendix B for details)
+					state, action_tensor = current_node.hidden_state, torch.tensor([new_node.node_id]).float()
 					next_state, reward = model.dynamics(state, action_tensor)
-					policy, _ = model.prediction(state)
-					new_node.on_node_creation(next_state, reward, policy)
-	#				new_node.on_node_creation(*model.dynamics(current_node.hidden_state, torch.tensor([new_node.node_id]).float().reshape((1, -1))))
-
+					policy, value_function = model.prediction(state)
+					new_node.on_node_creation(next_state, reward, policy, value_function)
 			else:
 				new_node = self.select(current_node.children)
 
@@ -68,18 +66,22 @@ class monte_carlo_search_tree:
 			relative_depth_level += 1
 		return current_node
 
-	def backpropgate(self, leaf_node, discount=0.1):
+	def backpropgate(self, leaf_node, depth, discount=0.1):
 		"""
 		When a leaf node is found, the values will be backpropgated and updated upwards
 		"""
-		value = 0
+		cumulative_discounted_reward = 0
+		visited_nodes = 0
 		while leaf_node is not None:
-			leaf_node.value += value
+			node_level_diff = depth - leaf_node.depth
+			cumulative_discounted_reward += (discount ** (node_level_diff) * leaf_node.reward) + leaf_node.value_of_model * discount ** visited_nodes
 			leaf_node.explored_count += 1
-
-			value = leaf_node.reward + discount * value
+			visited_nodes += 1
+			leaf_node.cumulative_discounted_reward = cumulative_discounted_reward
 			leaf_node = leaf_node.parrent
-		return value
+#			leaf_node.value += value
+#			value = leaf_node.reward + discount * value
+		return cumulative_discounted_reward
 
 	def select(self, nodes):
 		"""
@@ -118,11 +120,12 @@ class monte_carlo_search_tree:
 		if model:
 			state, action_tensor = self.root.hidden_state.reshape((1, -1)), torch.tensor([node.node_id]).float().reshape((1, -1))
 			next_state, reward = model.dynamics(state, action_tensor)
-			policy, _ = model.prediction(state)
-			node.on_node_creation(next_state, reward, policy)
-		for i in range(2 * self.max_search_depth * self.children_count):
+			policy, value_function = model.prediction(state)
+			node.on_node_creation(next_state, reward, policy, value_function)
+		for _ in range(2 * self.max_search_depth * self.children_count):
 			output_node = self.expand(node, model)
-			self.backpropgate(output_node)
+			depth = (output_node.depth - node.depth)
+			self.backpropgate(output_node, depth)
 		return output_node
 
 	def update_root(self, state, action):

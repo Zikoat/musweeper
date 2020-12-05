@@ -58,11 +58,11 @@ class TestMonteCarlo(unittest.TestCase):
 		current_node = final_expanded_node
 		while current_node is not None:
 			current_node.reward = 1
+			current_node.value_of_model = 1
 			current_node = current_node.parrent
 		# since the reward = 1 and discount=1, the total value should be the sum of length
-		expected_reward = (max_search_depth + 1)
-		print(expected_reward, tree.backpropgate(final_expanded_node, discount=1))
-		assert expected_reward == tree.backpropgate(final_expanded_node, discount=1)
+		expected_reward = (max_search_depth + 1) * 2
+		assert expected_reward == tree.backpropgate(final_expanded_node, depth=max_search_depth, discount=1)
 
 if __name__ == '__main__':
 	unittest.main()

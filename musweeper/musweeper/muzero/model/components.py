@@ -49,6 +49,12 @@ class component_dynamics(nn.Module, shared_backbone):
 		torch.tensor
 			the predicted reward from the given action 
 		"""
+		if len(state.shape) == 1:
+			state = state.reshape((1, -1))
+
+		if len(action.shape) == 1:
+			action = action.reshape((1, -1))
+
 		state = transform_input(state)
 		action = transform_input(action)
 

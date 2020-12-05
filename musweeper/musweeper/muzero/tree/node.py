@@ -56,6 +56,8 @@ class node:
 		self.reward = 0
 		self.policy = None
 		self.prior = 0
+		self.value_of_model = 0
+		self.cumulative_discounted_reward = 0
 
 		self.hidden_state = hidden_state
 		self.environment_state = None
@@ -63,7 +65,7 @@ class node:
 		self.depth = 0 if parrent is None else (parrent.depth + 1)
 
 		self.available_children_paths = None
-		self.score_metric = self.search_value_exploration_exploration
+		self.score_metric = self.upper_confidence_boundary #search_value_exploration_exploration
 
 	def add_exploration_noise(self):
 		"""
@@ -121,7 +123,6 @@ class node:
 				 (all_actions_sum + self.c2 + 1)/ self.c2				
 			)
 		)
-		print(all_actions_sum, second_part)
 		return self.q_s_a + self.p_s_a * second_part
 
 	@property
@@ -137,7 +138,7 @@ class node:
 		"""
 		explored = self.parrent.explored_count if self.parrent else 0
 		q = self.parrent.q if self.parrent else 0
-		parrent_visit_dot_parrent_q = explored * q + self.value
+		parrent_visit_dot_parrent_q = explored * q + self.cumulative_discounted_reward
 		return parrent_visit_dot_parrent_q/(explored + 1)
 
 	@property
@@ -161,7 +162,7 @@ class node:
 		self._value = value
 		self.min_max_node_tracker.update(value)
 
-	def on_node_creation(self, hidden_state, reward, policy):
+	def on_node_creation(self, hidden_state, reward, policy, value):
 		"""
 		When a node is created this callback will be used
 
@@ -175,6 +176,7 @@ class node:
 		self.reward = reward
 		self.hidden_state = hidden_state
 		self.policy = policy
+		self.value_of_model = value
 
 	def get_a_children_node(self, children_count):
 		"""
