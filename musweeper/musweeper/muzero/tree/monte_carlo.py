@@ -52,8 +52,8 @@ class monte_carlo_search_tree:
 			if (should_pick_random_node or current_node_has_no_children) and len(current_node.children) != self.children_count:
 				# TODO : add something to invalidate invalid states to make search easier when bootstraping
 				new_node = current_node.get_a_children_node(self.children_count)
-				found_leaf = True
-				if model is not None:
+				if model is not None and not new_node.has_init:
+					found_leaf = True
 					# when a new node is found, we assign reward and policy from the model (see Expansion in Appendix B for details)
 					state, action_tensor = current_node.hidden_state, torch.tensor([new_node.node_id]).float()
 					next_state, reward = model.dynamics(state, action_tensor)
@@ -122,10 +122,12 @@ class monte_carlo_search_tree:
 			next_state, reward = model.dynamics(state, action_tensor)
 			policy, value_function = model.prediction(state)
 			node.on_node_creation(next_state, reward, policy, value_function)
-		for _ in range(2 * self.max_search_depth * self.children_count):
+#		for _ in range(2 * self.max_search_depth * self.children_count):
+		delta_depth = 0
+		while delta_depth < self.max_search_depth:
 			output_node = self.expand(node, model)
-			depth = (output_node.depth - node.depth)
-			self.backpropgate(output_node, depth)
+			delta_depth = (output_node.depth - node.depth)
+			self.backpropgate(output_node, delta_depth)
 		return output_node
 
 	def update_root(self, state, action):

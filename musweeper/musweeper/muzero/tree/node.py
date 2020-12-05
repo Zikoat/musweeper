@@ -58,6 +58,7 @@ class node:
 		self.prior = 0
 		self.value_of_model = 0
 		self.cumulative_discounted_reward = 0
+		self.has_init = False
 
 		self.hidden_state = hidden_state
 		self.environment_state = None
@@ -177,7 +178,8 @@ class node:
 		self.hidden_state = hidden_state
 		self.policy = policy
 		self.value_of_model = value
-
+		self.has_init = True
+		
 	def get_a_children_node(self, children_count):
 		"""
 		Returns a unexplored child node

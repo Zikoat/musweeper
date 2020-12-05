@@ -23,8 +23,9 @@ def loss_from_game(model, game_history):
 		total_loss = transform_input(torch.tensor(0, dtype=torch.float64))
 		model.plan_action(transform_input(game_history.state[t]))
 		predicted_rollout_game_history = model.tree.get_rollout_path()
-		assert len(predicted_rollout_game_history.reward) >= K, "wrong size {} expected {}".format(len(predicted_rollout_game_history.reward), K)
-		for k in range((K)):
+		# since we moved over to UCB, it won't evenly explore 
+		assert len(predicted_rollout_game_history.reward) > 0, "wrong size {} expected {}".format(len(predicted_rollout_game_history.reward), K)
+		for k in range(min(K, len(predicted_rollout_game_history.reward))):
 			predicted_reward = transform_input(predicted_rollout_game_history.reward[k].float())
 			actual_reward = transform_input(game_history.actual_reward[t + k].float())
 
