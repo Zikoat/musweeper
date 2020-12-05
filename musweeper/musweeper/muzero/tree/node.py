@@ -46,6 +46,8 @@ class node:
 		self.children = {}
 		self.node_id = node_id
 		self.parrent = parrent
+		if self.parrent is not None and self.node_id not in self.parrent.children:
+			self.parrent.children[self.node_id] = self
 		
 		self.min_max_node_tracker = min_max_node_tracker() if parrent is None else parrent.min_max_node_tracker
 
@@ -124,6 +126,7 @@ class node:
 				 (all_actions_sum + self.c2 + 1)/ self.c2				
 			)
 		)
+		print(self.q_s_a , self.p_s_a , all_actions_sum, second_part, self.parrent.children.values(), self.parrent)
 		return self.q_s_a + self.p_s_a * second_part
 
 	@property
@@ -179,7 +182,7 @@ class node:
 		self.policy = policy
 		self.value_of_model = value
 		self.has_init = True
-		
+
 	def get_a_children_node(self, children_count):
 		"""
 		Returns a unexplored child node

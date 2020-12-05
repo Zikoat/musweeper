@@ -47,19 +47,25 @@ class TestNode(unittest.TestCase):
         """
         parent_node = node(None)
         parent_node.explored_count = 2
+        parent_node.value = 10
+        parent_node.cumulative_discounted_reward = 4
 
-        children_node_not_explored = node(parent_node)
+        childreN_node_with_high_prior = node(parent_node)
+        childreN_node_with_high_prior.prior = 0.8
+        childreN_node_with_high_prior.wins_count = 3
+        childreN_node_with_high_prior.explored_count = 3
 
         children_node_has_explored = node(parent_node)
         children_node_has_explored.wins_count = 2
         children_node_has_explored.explored_count = 2
         children_node_has_explored.value = 42
+        children_node_has_explored.prior = 0.01
 
         score_node_has_explored = children_node_has_explored.upper_confidence_boundary()
-        score_node_not_explored = children_node_not_explored.upper_confidence_boundary()
+        score_node_with_high_prior = childreN_node_with_high_prior.upper_confidence_boundary()
 
         # monte carlo will faveour model that has been explored with win rate over failed models
-        assert score_node_has_explored > score_node_not_explored
+        assert score_node_has_explored < score_node_with_high_prior
 
     def test_explored_with_high_win_rate_vs_low(self):
         """
@@ -68,16 +74,18 @@ class TestNode(unittest.TestCase):
         parent_node = node(None)
         parent_node.explored_count = 2
         parent_node.value = 10
+        parent_node.cumulative_discounted_reward = 4
 
         children_node_high_win = node(parent_node)
         children_node_high_win.wins_count = 3
         children_node_high_win.explored_count = 5
-        children_node_high_win.value = 42
+        children_node_high_win.prior = 0.01
 
         children_node_low_win = node(parent_node)
         children_node_low_win.wins_count = 2
         children_node_low_win.explored_count = 51
         children_node_low_win.value = 0
+        children_node_low_win.prior = 0.01
 
         score_node_low_win = children_node_low_win.upper_confidence_boundary()
         score_node_high_win = children_node_high_win.upper_confidence_boundary()

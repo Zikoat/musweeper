@@ -8,9 +8,9 @@ def create_model(env, testing=False, config={}):
 	action_size = env.action_size
 
 	if testing:
-		dynamics = mock_model(custom_generator=lambda state, action: (torch.rand(representation_size), torch.rand((1))) )
-		prediction = mock_model(custom_generator=lambda hidden_state: (torch.rand(1), torch.rand(1)) )
-		representation = mock_model(custom_generator=lambda state: torch.rand(representation_size))
+		dynamics = mock_model(custom_generator=lambda state, action: (torch.rand(representation_size, requires_grad=True), torch.rand((1), requires_grad=True)) )
+		prediction = mock_model(custom_generator=lambda hidden_state: (torch.rand(action_size, requires_grad=True), torch.rand(1, requires_grad=True)) )
+		representation = mock_model(custom_generator=lambda state: torch.rand(representation_size, requires_grad=True))
 		return representation, dynamics, prediction
 
 	else:
@@ -69,3 +69,6 @@ class muzero(nn.Module):
 	def train(self, replay_buffer):
 		pass
 
+	def think(self, state):
+		policy, _ = self.prediction(state)
+		return torch.argmax(policy), policy

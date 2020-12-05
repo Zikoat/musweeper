@@ -14,9 +14,7 @@ env = BasicEnv()
 
 representation, dynamics, prediction = create_model(env)
 model = muzero(env, representation, dynamics, prediction, max_search_depth=3)
-optimizer = optim.Adam(model.parameters())
-
-print(model)
+optimizer = optim.Adam(model.parameters(), lr=3e-4, weight_decay=0.01)
 
 #@profile
 def train():
