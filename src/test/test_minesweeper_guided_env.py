@@ -43,7 +43,7 @@ class MinesweeperGuidedEnvTest(unittest.TestCase):
         self.assertTupleEqual(ob.shape, (2, 8, 8))
         self.assertNotIn(None, ob)
 
-    def test_call_api_solve(self):
+    def test_solve_with_rules(self):
         rules = {"rules":[{"num_mines":1,"cells":["2-1"]},{"num_mines":0,"cells":["1-1"]},{"num_mines":0,"cells":[]}],"total_cells":2,"total_mines":1}
         result = api_solve(rules)
 
@@ -63,6 +63,53 @@ class MinesweeperGuidedEnvTest(unittest.TestCase):
         print(output)
         print("is of type", type(output))
         self.assertIsNone(output["solution"], None)
+
+    def test_solve_with_board(self):
+        # This test is based on the example given in
+        # https://github.com/mrgriscom/minesweepr/blob/master/README.md
+        board = {"board":"""..1xxxxxxx
+..2xxxxxxx
+..3xxxxxxx
+..2xxxxxxx
+112xxxxxxx
+xxxxxxxxxx
+xxxxxxxxxx
+xxxxxxxxxx
+xxxxxxxxxx
+xxxxxxxxxx""",
+            "total_mines": 10}
+        result = api_solve(board)
+        print(result)
+        self.assertGreaterEqual(result["processing_time"], 0)
+
+        self.assertEqual(result["solution"],
+                         {  # note: the coordinates are given as 'y-x'
+                             '01-01': 0.0,
+                             '01-02': 0.0,
+                             '01-03': 0.0,
+                             '01-04': 0.0, # A
+                             '02-01': 0.0,
+                             '02-02': 0.0,
+                             '02-03': 0.0,
+                             '02-04': 1.0, # B
+                             '03-01': 0.0,
+                             '03-02': 0.0,
+                             '03-03': 0.0,
+                             '03-04': 1.0, # C
+                             '04-01': 0.0,
+                             '04-02': 0.0,
+                             '04-03': 0.0,
+                             '04-04': 1.0, # D
+                             '05-01': 0.0,
+                             '05-02': 0.0,
+                             '05-03': 0.0,
+                             '05-04': 0.0, # E
+                             '06-01': 0.07792207792207793, # I
+                             '06-02': 0.9220779220779222, # H
+                             '06-03': 0.0, # G
+                             '06-04': 0.07792207792207793, # F
+                             '_other': 0.07792207792207792, # None
+                         })
 
 
 if __name__ == '__main__':
