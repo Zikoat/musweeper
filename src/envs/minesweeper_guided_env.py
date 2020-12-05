@@ -44,7 +44,7 @@ class MinesweeperGuidedEnv(MinesweeperEnv):
         for coordinate_string, mine_probability in result["solution"].items():
             if coordinate_string != "_other":
                 x, y = self.parse_coordinate(coordinate_string)
-                matrix[y - 1, x - 1] = mine_probability
+                matrix[x - 1, y - 1] = mine_probability
 
         assert not None in matrix
         return matrix
