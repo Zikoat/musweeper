@@ -11,7 +11,7 @@ def evaluate_agent(agent, env):
     env = wrappers.Monitor(env, directory=outdir, force=True)
     env.seed(0)
 
-    episode_count = 100
+    episode_count = 10
     reward = 0
     done = False
     stats = []
