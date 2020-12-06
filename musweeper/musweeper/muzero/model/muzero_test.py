@@ -44,18 +44,23 @@ class TestMuzero(unittest.TestCase):
 
 		assert depth_length == model.tree.root.depth
 		current_root = model.tree.originale_root
+		assert 0 < len(actions_history)
+		max_children_count = 0
 		while 0 < len(actions_history):
 			action = actions_history.pop(0)
 			node_action = current_root.children[action]
+			max_children_count = max(max_children_count, len(current_root.children))
 	
 			assert node_action.environment_state is not None, "{depth}, {env}".format(depth=node_action.depth, env=node_action.environment_state)
 			assert type(node_action.score_metric()) in [int, float, np.float64]
 			assert not np.isnan(node_action.score_metric())
+			assert node_action.prior > 0
 	
 			active_nodes = list(filter(lambda x: x.environment_state is not None, node_action.children.values()))
 			if len(actions_history) > 0:
 				assert 1 == len(active_nodes), "bad state at {}".format(node_action.depth)
 			current_root = node_action
+		assert 2 == max_children_count
 		
 if __name__ == '__main__':
 	unittest.main()

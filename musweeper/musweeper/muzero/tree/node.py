@@ -21,7 +21,6 @@ class min_max_node_tracker:
 		float
 			normalized score to [0, 1]
 		"""
-		print(self.min, self.max)
 		if self.min != self.max:
 			return (node_Q - self.min)/ (self.max - self.min)
 		return node_Q
@@ -216,7 +215,6 @@ class node:
 		reward : float
 			the reward from the environment
 		"""
-	#	assert not np.isnan(value.detach().numpy()), "input to model is nan ({})".format(value.detach().numpy())
 		self.reward = reward
 		self.hidden_state = hidden_state
 		self.policy = policy

@@ -47,19 +47,31 @@ class monte_carlo_search_tree:
 				# TODO : add something to invalidate invalid states to make search easier when bootstraping
 				new_node = current_node.get_a_children_node(self.children_count)
 				if model is not None and not new_node.has_init:
+					self.set_values_for_expand_a_node(new_node, model)
 					found_leaf = True
-					# when a new node is found, we assign reward and policy from the model (see Expansion in Appendix B for details)
-					state, action_tensor = current_node.hidden_state, torch.tensor([new_node.node_id]).float()
-					next_state, reward = model.dynamics(state, action_tensor)
-					policy, value_function = model.prediction(state)
-					next_state_policy, _ = model.prediction(next_state)
-					new_node.on_node_creation(next_state, reward, policy, value_function)#, next_state_policy, model.dynamics)
 			else:
 				new_node = self.select(current_node.children)
 
 			current_node = new_node
 			relative_depth_level += 1
 		return current_node
+
+	def set_values_for_expand_a_node(self, new_node, model, is_child_node=False):
+		# when a new node is found, we assign reward and policy from the model (see Expansion in Appendix B for details)
+		hidden_state = new_node.parrent.hidden_state# if not is_root_node else new_node.hidden_state
+		action = new_node.node_id # if not is_root_node else new_node.id
+#		assert hidden_state is not None, str(new_node)
+		state, action_tensor = hidden_state, torch.tensor([action]).float()
+		next_state, reward = model.dynamics(state, action_tensor)
+		policy, value_function = model.prediction(state)
+		new_node.on_node_creation(next_state, reward, policy, value_function)#, next_state_policy, model.dynamics)
+		
+		if not is_child_node:
+			next_state_policy, _ = model.prediction(next_state)
+			next_state_policy = next_state_policy[0] if len(next_state_policy.shape) > 1 else next_state_policy
+			for action in range(self.children_count):
+				new_node.children[action] =  node(parrent=new_node, node_id=action, hidden_state=None, prior=next_state_policy[action].item())
+				self.set_values_for_expand_a_node(new_node.children[action], model, is_child_node=True)
 
 	def backpropgate(self, leaf_node, depth, discount=0.1):
 		"""
@@ -115,11 +127,12 @@ class monte_carlo_search_tree:
 			node = self.root.create_children_if_not_exist(node)
 
 		if model:
-			state, action_tensor = self.root.hidden_state.reshape((1, -1)), torch.tensor([node.node_id]).float().reshape((1, -1))
-			next_state, reward = model.dynamics(state, action_tensor)
-			policy, value_function = model.prediction(state)
-			next_state_policy, _ = model.prediction(next_state)
-			node.on_node_creation(next_state, reward, policy, value_function)#, next_state_policy, model.prediction, model.dynamics)
+			self.set_values_for_expand_a_node(node, model)
+#			state, action_tensor = self.root.hidden_state.reshape((1, -1)), torch.tensor([node.node_id]).float().reshape((1, -1))
+#			next_state, reward = model.dynamics(state, action_tensor)
+#			policy, value_function = model.prediction(state)
+#			next_state_policy, _ = model.prediction(next_state)
+#			node.on_node_creation(next_state, reward, policy, value_function)#, next_state_policy, model.prediction, model.dynamics)
 
 		delta_depth = 0
 		visited_nodes = 0

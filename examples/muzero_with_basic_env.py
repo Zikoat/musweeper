@@ -67,7 +67,7 @@ def train(model, env):
 			report.add_variable("loss over time (selfplay)",  total_loss.item())
 		"""
 		sum_game_reward =  sum([
-			event.reward for event in last_game.history
+			event.reward.item() for event in last_game.history
 		])
 		report.add_variable("reward over time", sum_game_reward)
 		game_score.append(sum_game_reward)
