@@ -29,3 +29,6 @@ class replay_buffer:
 		if len(self.memory) < self.batch_size:
 			return self.memory
 		return random.sample(self.memory, self.batch_size)
+
+	def is_full(self):
+		return self.batch_size < len(self.memory)

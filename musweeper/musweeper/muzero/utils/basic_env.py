@@ -10,7 +10,11 @@ class BasicEnv(gym.Env):
 		self.round = 0
 		self.state_size = 2
 		self.action_size = 2
-		self.time_out = 10
+		self.timeout = 10
+
+	@property
+	def active_index(self):
+		return int(self.round % 2 == 0)
 
 	@property
 	def state(self):
@@ -23,7 +27,7 @@ class BasicEnv(gym.Env):
 			the output state
 		"""
 		state = torch.zeros((self.state_size))
-		state[int(self.round % 2 == 0)] = 1
+		state[self.active_index] = 1
 		return state
 
 	def reset(self):
@@ -55,10 +59,10 @@ class BasicEnv(gym.Env):
 		boolean
 			if the game is done
 		"""
-		reward = int(action == (self.round % 2 == 0))
+		reward = int(action == self.active_index)
 
 		self.round += 1
-		return self.state, reward, (self.round > self.time_out)
+		return self.state, reward, (self.round > self.timeout)
 
 	def value(self, action, t):
 		"""
@@ -76,4 +80,4 @@ class BasicEnv(gym.Env):
 		int
 			reward -1 for bad action and 1 for good action
 		"""
-		return 1 if bool(action == (t % 2 == 0)) else -1
+		return 1 if bool(action == self.active_index) else -1

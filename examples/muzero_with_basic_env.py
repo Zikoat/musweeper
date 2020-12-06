@@ -36,10 +36,10 @@ def train(model, env):
 	optimizer = optim.Adam(model.parameters(), lr=3e-4, weight_decay=0.01)
 
 	game_replay_buffer = replay_buffer()
-	timeout = clock(60 * 60)
+	timeout = clock(30 * 1)
 	i = 0
 	print_interval = 15
-	update_interval = 5
+	update_interval = 1
 	selfplay_interval = 5
 
 	report = model_report("bragearn@stud.ntnu.no")
@@ -50,7 +50,7 @@ def train(model, env):
 
 		last_game = play_game(model, env)
 		game_replay_buffer.add(last_game)
-		if i % update_interval == 0:
+		if game_replay_buffer.is_full() and i % update_interval == 0:
 			optimizer.zero_grad()
 			total_loss = transform_input(torch.tensor(0, dtype=torch.float64))
 			for game in game_replay_buffer.get_batch():
@@ -81,6 +81,12 @@ def train(model, env):
 		report.add_note('debug from predictions {}'.format(key))
 		for layer in value:
 			report.add_note(str(layer))
+	report.add_note('first predictions')
+	for el in model.prediction.debugger.logs[:12]:
+		report.add_note(str(el))
+	report.add_note('last predictions')
+	for el in model.prediction.debugger.logs[-12:]:
+		report.add_note(str(el))
 	print(model.prediction.debugger.get_last_round())
 	report.send_report()
 

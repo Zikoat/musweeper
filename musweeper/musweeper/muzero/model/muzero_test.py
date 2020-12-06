@@ -3,6 +3,7 @@ from .muzero import *
 from .mock import *
 from ..utils.basic_env import *
 import torch
+import numpy as np
 
 class TestMuzero(unittest.TestCase):
 	def test_plan_action(self):
@@ -46,7 +47,11 @@ class TestMuzero(unittest.TestCase):
 		while 0 < len(actions_history):
 			action = actions_history.pop(0)
 			node_action = current_root.children[action]
+	
 			assert node_action.environment_state is not None, "{depth}, {env}".format(depth=node_action.depth, env=node_action.environment_state)
+			assert type(node_action.score_metric()) in [int, float, np.float64]
+			assert not np.isnan(node_action.score_metric())
+	
 			active_nodes = list(filter(lambda x: x.environment_state is not None, node_action.children.values()))
 			if len(actions_history) > 0:
 				assert 1 == len(active_nodes), "bad state at {}".format(node_action.depth)

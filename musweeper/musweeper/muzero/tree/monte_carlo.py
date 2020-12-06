@@ -121,7 +121,7 @@ class monte_carlo_search_tree:
 
 		delta_depth = 0
 		visited_nodes = 0
-		while delta_depth < self.max_search_depth and 30 < visited_nodes:
+		while delta_depth < self.max_search_depth and visited_nodes < 30:
 			output_node = self.expand(node, model)
 			delta_depth = (output_node.depth - node.depth)
 			self.backpropgate(output_node, delta_depth)

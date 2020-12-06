@@ -32,6 +32,7 @@ def loss_from_game(model, game_history):
 		# since we moved over to UCB, it won't evenly explore
 		assert predicted_rollout_game_history.length > 0, "zero output, something is wrong in the search tree"
 		rollout_length = min(K, predicted_rollout_game_history.length)
+		assert rollout_length > 0, "zero output, something is wrong in the search tree"
 		for k in range(rollout_length):
 			predicted_reward = transform_input(predicted_rollout_game_history.history[k].reward.float())
 			actual_reward = transform_input(game_history.history[t + k].reward.float())
@@ -50,6 +51,21 @@ def loss_from_game(model, game_history):
 
 			assert 0 <= predicted_value.item() and predicted_value.item() <= model.action_size, "value should be in interval [0, 1]"
 			assert 0 <= actual_value.item() and actual_value.item() <= model.action_size, "value should be in interval [0, 1]"
+
+			model.prediction.debugger.log({
+				"predicted_reward": str(predicted_reward),
+				"reward": str(actual_reward),
+			})
+
+			model.prediction.debugger.log({
+				"predicted_action": str(predicted_action),
+				"action": str(actual_action),
+			})
+
+			model.prediction.debugger.log({
+				"predicted_value": str(predicted_value),
+				"value": str(actual_value),
+			})
 
 			total_loss += loss_error(predicted_reward, actual_reward) + loss_error_actions(predicted_action, actual_action) + loss_error(predicted_value, actual_value)
 		entire_loss += scale_gradient(total_loss, 1 / rollout_length)

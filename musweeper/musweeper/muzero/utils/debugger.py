@@ -20,6 +20,9 @@ class model_debugger:
 		self.active_forwards = {
 
 		}
+		self.logs = [
+
+		]
 
 	def get_last_round(self):
 		return self.data.items()
@@ -34,6 +37,9 @@ class model_debugger:
 	def stop_forward(self, name):
 		self.data[name] = self.active_forwards[name]
 		self.active_forwards[name] = []
+
+	def log(self, value):
+		self.logs.append(value)
 
 class debugger:
 	def __init__(self):

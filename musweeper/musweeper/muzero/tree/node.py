@@ -21,6 +21,7 @@ class min_max_node_tracker:
 		float
 			normalized score to [0, 1]
 		"""
+		print(self.min, self.max)
 		if self.min != self.max:
 			return (node_Q - self.min)/ (self.max - self.min)
 		return node_Q
@@ -34,8 +35,10 @@ class min_max_node_tracker:
 		node_q : float
 			the node value
 		"""
+		print("???")
 		self.max = max(self.max, node_q)
 		self.min = min(self.min, node_q)
+		print(self.max, self.min)
 
 	def __str__(self):
 		return "min : {},  max : {}".format(self.min, self.max)
@@ -115,14 +118,14 @@ class node:
 		float
 			the upper confidence boundary
 		"""
+		if self.parrent is None:
+			return 0
+
 		self.c1 = 1.25
 		self.c2 = 19652
 
 		self.q_s_a = self.q
 		self.p_s_a = self.prior
-
-		if self.parrent is None:
-			return 0
 
 		all_actions_sum = np.sum([
 			i.explored_count for i in self.parrent.children.values()
@@ -147,6 +150,7 @@ class node:
 			second_part_denominator_2,
 			second_part
 		]
+		assert not np.isnan(value), "ucb score is nan {}".format(self.ucb_score_parts)
 		return value
 
 	@property
@@ -161,9 +165,16 @@ class node:
 			node value score
 		"""
 		reward = self.reward.item() if torch.is_tensor(self.reward) else self.reward
+		node_value = self.node_value()
 		value = self.min_max_node_tracker.normalized(
-			self.node_value()
+			node_value
 		)
+		assert type(reward) in [int, float]
+		assert type(value) in [int, float]
+		assert type(node_value) in [int, float]
+		assert not np.isnan(reward), "reward is nan"
+		assert not np.isnan(node_value), "node_value is nan"
+		assert not np.isnan(value), "value is nan"
 		return reward + value
 #		explored = self.parrent.explored_count if self.parrent else 0
 #		q = self.parrent.q if self.parrent else 0
@@ -207,10 +218,12 @@ class node:
 		reward : float
 			the reward from the environment
 		"""
+	#	assert not np.isnan(value.detach().numpy()), "input to model is nan ({})".format(value.detach().numpy())
 		self.reward = reward
 		self.hidden_state = hidden_state
 		self.policy = policy
 		self.value_of_model = value
+		self.value = value
 		self.has_init = True
 
 	def get_a_children_node(self, children_count):
