@@ -52,7 +52,8 @@ class monte_carlo_search_tree:
 					state, action_tensor = current_node.hidden_state, torch.tensor([new_node.node_id]).float()
 					next_state, reward = model.dynamics(state, action_tensor)
 					policy, value_function = model.prediction(state)
-					new_node.on_node_creation(next_state, reward, policy, value_function)
+					next_state_policy, _ = model.prediction(next_state)
+					new_node.on_node_creation(next_state, reward, policy, value_function)#, next_state_policy, model.dynamics)
 			else:
 				new_node = self.select(current_node.children)
 
@@ -117,7 +118,8 @@ class monte_carlo_search_tree:
 			state, action_tensor = self.root.hidden_state.reshape((1, -1)), torch.tensor([node.node_id]).float().reshape((1, -1))
 			next_state, reward = model.dynamics(state, action_tensor)
 			policy, value_function = model.prediction(state)
-			node.on_node_creation(next_state, reward, policy, value_function)
+			next_state_policy, _ = model.prediction(next_state)
+			node.on_node_creation(next_state, reward, policy, value_function)#, next_state_policy, model.prediction, model.dynamics)
 
 		delta_depth = 0
 		visited_nodes = 0

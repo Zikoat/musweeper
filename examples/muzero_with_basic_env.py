@@ -36,7 +36,7 @@ def train(model, env):
 	optimizer = optim.Adam(model.parameters(), lr=3e-4, weight_decay=0.01)
 
 	game_replay_buffer = replay_buffer()
-	timeout = clock(30 * 1)
+	timeout = clock(60 * 5)
 	i = 0
 	print_interval = 15
 	update_interval = 1

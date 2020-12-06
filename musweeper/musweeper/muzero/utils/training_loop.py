@@ -11,7 +11,6 @@ def loss_from_game(model, game_history):
 	"""
 	loss_error = nn.MSELoss()
 	loss_error_actions = nn.CrossEntropyLoss()
-	model.reset()
 
 	entire_loss = transform_input(torch.tensor(0, dtype=torch.float64))
 	K = model.max_search_depth
@@ -26,6 +25,7 @@ def loss_from_game(model, game_history):
 		total_loss = transform_input(torch.tensor(0, dtype=torch.float64))
 
 		assert game_history.history[t].state is not None, "state should not be none {}".format(game_history.history[t])
+		model.reset()
 		model.plan_action(transform_input(game_history.history[t].state))
 		predicted_rollout_game_history = model.tree.get_rollout_path()
 
@@ -33,6 +33,7 @@ def loss_from_game(model, game_history):
 		assert predicted_rollout_game_history.length > 0, "zero output, something is wrong in the search tree"
 		rollout_length = min(K, predicted_rollout_game_history.length)
 		assert rollout_length > 0, "zero output, something is wrong in the search tree"
+		assert model.tree.root.depth == 0, "the model shuld always start from a fresh tree"
 		for k in range(rollout_length):
 			predicted_reward = transform_input(predicted_rollout_game_history.history[k].reward.float())
 			actual_reward = transform_input(game_history.history[t + k].reward.float())
@@ -69,5 +70,5 @@ def loss_from_game(model, game_history):
 
 			total_loss += loss_error(predicted_reward, actual_reward) + loss_error_actions(predicted_action, actual_action) + loss_error(predicted_value, actual_value)
 		entire_loss += scale_gradient(total_loss, 1 / rollout_length)
-		model.update(None, game_history.history[t].action)
+#		model.update(None, game_history.history[t].action)
 	return entire_loss

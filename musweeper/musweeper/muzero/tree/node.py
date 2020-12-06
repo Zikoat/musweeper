@@ -35,10 +35,8 @@ class min_max_node_tracker:
 		node_q : float
 			the node value
 		"""
-		print("???")
 		self.max = max(self.max, node_q)
 		self.min = min(self.min, node_q)
-		print(self.max, self.min)
 
 	def __str__(self):
 		return "min : {},  max : {}".format(self.min, self.max)
@@ -48,7 +46,7 @@ class min_max_node_tracker:
 
 
 class node:
-	def __init__(self, parrent, node_id=None, hidden_state=None):
+	def __init__(self, parrent, node_id=None, hidden_state=None, prior=0):
 		self.children = {}
 		self.node_id = node_id
 		self.parrent = parrent
@@ -64,7 +62,7 @@ class node:
 
 		self.reward = 0
 		self.policy = None
-		self.prior = 0
+		self.prior = prior
 		self.value_of_model = 0
 		self.cumulative_discounted_reward = 0
 		self.has_init = False
@@ -207,7 +205,7 @@ class node:
 			return 0
 		return self.value / self.explored_count
 
-	def on_node_creation(self, hidden_state, reward, policy, value):
+	def on_node_creation(self, hidden_state, reward, policy, value):#, prediction, dynamics):
 		"""
 		When a node is created this callback will be used
 
@@ -225,6 +223,22 @@ class node:
 		self.value_of_model = value
 		self.value = value
 		self.has_init = True
+		
+		policy = policy[0] if len(policy.shape) > 1 else policy
+		policy_sum = torch.sum(policy)
+		self.prior = (torch.exp(policy[self.node_id]) / policy_sum).item()
+
+		"""
+		next_state_policy, next_value = prediction(hidden_state)
+		next_policy_sum = torch.sum(next_state_policy[0])
+		for action in range(next_state_policy[0].shape[0]):
+			p = (next_state_policy[0][action] / next_policy_sum).item()
+			next_state, reward = dynamics(hidden_state, torch.tensor([action]).float())
+			
+			self.children[action] = node(parrent=self, node_id=action, hidden_state=next_state, prior=p)
+			self.children[action].reward = reward
+			self.children[action].value = next_value[]
+		"""
 
 	def get_a_children_node(self, children_count):
 		"""
