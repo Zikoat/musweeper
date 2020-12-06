@@ -1,5 +1,7 @@
 from ..utils.game_history import game_event_history
 import torch
+import numpy as np
+
 
 def play_game(model, env, self_play=False):
 	model.reset()
@@ -10,7 +12,7 @@ def play_game(model, env, self_play=False):
 		if self_play:
 			action, policy = model.think(observation)
 			best_action = action.item()
-			observation, reward, done = env.step(best_action)
+			observation, reward, done = env.step(best_action)[:3]
 			game_history.add(
 				action=policy,
 				reward=None,
@@ -19,12 +21,16 @@ def play_game(model, env, self_play=False):
 			)
 		else:
 			state = observation
-			output = model.plan_action(observation)
+			state = state if not isinstance(state, np.ndarray) else torch.from_numpy(state)
+			state = torch.flatten(state) if state.dim() != 1 else state
+			state = state.float()
+			output = model.plan_action(state)
 			best_node = max(output, key=lambda node: node.value)
-			best_value = best_node.value
+			best_value = model.tree.root.min_max_node_tracker.normalized(best_node.value)
+		#	print(best_node.value, best_value, model.tree.root.min_max_node_tracker)
 			best_action = best_node.node_id
 
-			observation, reward, done = env.step(best_action)
+			observation, reward, done = env.step(best_action)[:3]
 			game_history.add(
 				reward=torch.tensor([reward]).reshape((1, -1)),
 				action=best_action,

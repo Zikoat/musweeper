@@ -1,5 +1,5 @@
 # todo
-- [x] implement monte carlo tree (with tsts)
+- [x] implement monte carlo tree (with tests)
 - [x] implement model mock (with tests)
 
 - [x] implement better way of doing replay buffering

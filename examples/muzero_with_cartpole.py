@@ -1,3 +1,10 @@
+import gym
+from musweeper.muzero.utils.basic_env import *
+from musweeper.muzero.model.muzero import *
+from musweeper.muzero.utils.training_loop import *
+from musweeper.muzero.model.components import transform_input
+from musweeper.muzero.model.selfplay import play_game, selfplay_single_player
+import gym
 from musweeper.muzero.utils.basic_env import *
 from musweeper.muzero.model.muzero import *
 from musweeper.muzero.utils.training_loop import *
@@ -14,17 +21,12 @@ class clock:
 	def __call__(self):
 		return self.end < time.time()
 
-def see_model_search_tree(model, env, view_only=False):
+def see_model_search_tree(model, env):
 	model.reset()
 	done = False
 	observation = env.reset()
 	original_root = None
 	while not done:
-		state = observation
-		state = state if not isinstance(state, np.ndarray) else torch.from_numpy(state)
-		state = torch.flatten(state) if state.dim() != 1 else state
-		state = state.float()
-
 		output = model.plan_action(observation)
 		if original_root is None:
 			original_root = model.tree.root
@@ -32,7 +34,7 @@ def see_model_search_tree(model, env, view_only=False):
 		best_action = best_node.node_id
 		observation, reward, done = env.step(best_action)[:3]
 		model.update(observation, best_action)
-	return [model.tree.draw(view_only=view_only), model.tree.draw(show_only_used_edges=True, view_only=view_only)]
+	return [model.tree.draw(), model.tree.draw(show_only_used_edges=True)]
 
 def train(model, env):
 	from hydra.reports.model_evaluation_report import model_report
@@ -41,7 +43,7 @@ def train(model, env):
 	optimizer = optim.Adam(model.parameters(), lr=3e-4, weight_decay=0.01)
 
 	game_replay_buffer = replay_buffer()
-	timeout = clock(60 * 15)
+	timeout = clock(60 * 1)#10)
 	i = 0
 	print_interval = 15
 	update_interval = 1
@@ -75,6 +77,9 @@ def train(model, env):
 			event.reward.item() for event in last_game.history
 		])
 		report.add_variable("reward over time", sum_game_reward)
+		report.add_variable("game length over time", len(last_game.history))
+		for event in last_game.history:
+			report.add_variable("game actions used", event.action)
 		game_score.append(sum_game_reward)
 		i += 1
 	sample_game = play_game(model, env)
@@ -96,8 +101,9 @@ def train(model, env):
 	report.send_report()
 
 if __name__ == "__main__":
-	env = BasicEnv(state_size=3)
+	env = gym.make("CartPole-v1")
 
 	representation, dynamics, prediction = create_model(env)
 	model = muzero(env, representation, dynamics, prediction, max_search_depth=3)
 	train(model, env)
+

@@ -22,6 +22,8 @@ class min_max_node_tracker:
 			normalized score to [0, 1]
 		"""
 		if self.min != self.max:
+			# TODO : this should't have to be called again. Find out why it is not called the first time.
+			self.update(node_Q)
 			return (node_Q - self.min)/ (self.max - self.min)
 		return node_Q
 
@@ -55,6 +57,7 @@ class node:
 		self.min_max_node_tracker = min_max_node_tracker() if parrent is None else parrent.min_max_node_tracker
 
 		self._value = 0
+		self.value_sum = 0
 		self.explored_count = 0
 		self.wins_count = 0
 		self.outcome = 0
@@ -84,10 +87,10 @@ class node:
 		"""
 		dirichlet_alpha = 0.03
 		root_exploration_fraction = 0.25
-		actions = list(self.children.values())
-		noise = np.random.dirichlet([dirichlet_alpha] * len(actions))
-		for action, noise in zip(actions, noise):
-			action.prior = action.prior * (1 - root_exploration_fraction) + noise * root_exploration_fraction
+		child_actions = list(self.children.values())
+		noise = np.random.dirichlet([dirichlet_alpha] * len(child_actions))
+		for child_action, noise in zip(child_actions, noise):
+			child_action.prior = child_action.prior * (1 - root_exploration_fraction) + noise * root_exploration_fraction
 
 	def search_value_exploration_exploration(self):
 		"""
@@ -171,7 +174,7 @@ class node:
 		assert type(node_value) in [int, float]
 		assert not np.isnan(reward), "reward is nan"
 		assert not np.isnan(node_value), "node_value is nan"
-		assert not np.isnan(value), "value is nan"
+		assert not np.isnan(value), "value is nan {}, {}".format(value, self.min_max_node_tracker)
 		return reward + value
 #		explored = self.parrent.explored_count if self.parrent else 0
 #		q = self.parrent.q if self.parrent else 0
@@ -192,17 +195,17 @@ class node:
 		
 	@property
 	def value(self):
-		return self._value
+		return self.value_sum
 
 	@value.setter
 	def value(self, value):
-		self._value = value.item() if torch.is_tensor(value) else value
+		self.value_sum = value.item() if torch.is_tensor(value) else value
 		self.min_max_node_tracker.update(self.node_value())
 
 	def node_value(self):
 		if self.explored_count == 0:
 			return 0
-		return self.value / self.explored_count
+		return self.value_sum / self.explored_count
 
 	def on_node_creation(self, hidden_state, reward, policy, value):#, prediction, dynamics):
 		"""
@@ -253,7 +256,9 @@ class node:
 			the new child node
 		"""
 		if self.available_children_paths is None:
-			self.available_children_paths = list(range(children_count))
+			self.available_children_paths = list(filter(lambda x: x not in self.children, list(range(children_count))))
+		if len(self.available_children_paths) == 0:
+			return None
 		picked_node = self.available_children_paths[random.randint(0, len(self.available_children_paths) - 1)]
 		self.available_children_paths.remove(picked_node)
 		return self.create_node(picked_node)
@@ -322,7 +327,7 @@ class node:
 		return max(self.children.items(), key=lambda x: x[1].search_value_exploration_exploration())[1].node_id
 
 	def __str__(self):
-		return "id : {}, value: {}, depth: {}".format(self.node_id, self.value, self.depth)
+		return "id : {}, value: {}, depth: {}".format(self.node_id, self.value_sum, self.depth)
 
 	def __repr__(self):
 		return self.__str__()

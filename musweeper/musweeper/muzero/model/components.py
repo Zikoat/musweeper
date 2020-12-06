@@ -3,8 +3,14 @@ import torch.nn.functional as F
 import torch
 from torch.nn.modules import transformer
 from ..utils.debugger import *
+import numpy as np
 
 def transform_input(tensor):
+	if isinstance(tensor, np.ndarray):
+		tensor = torch.from_numpy(tensor)
+		tensor = torch.flatten(tensor) if tensor.dim() != 1 else tensor
+		tensor = tensor.float()
+	
 	if not tensor.is_cuda and torch.cuda.is_available():
 		return tensor.cuda()
 	return tensor
@@ -112,7 +118,7 @@ class component_predictions(nn.Module, shared_backbone):
 		self.debugger.add_element("predictions", state)
 		combined = torch.sigmoid(self.combined(state))
 		self.debugger.add_element("predictions", combined)
-		policy, value = torch.sigmoid(self.policy(combined)), torch.sigmoid(self.value(combined))
+		policy, value = torch.softmax(torch.sigmoid(self.policy(combined)), dim=1), torch.sigmoid(self.value(combined))
 		self.debugger.add_element("predictions", (policy, value))
 		self.debugger.stop_forward("predictions")
 		return policy, value

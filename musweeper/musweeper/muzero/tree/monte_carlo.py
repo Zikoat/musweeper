@@ -5,7 +5,7 @@ import torch
 from ..utils.game_history import *
 import time
 from graphviz import Digraph
-
+import tempfile
 class monte_carlo_search_tree:
 	def __init__(self, root_state, max_search_depth, action_size=2, random_rollout_metric=None):
 		self.max_search_depth = max_search_depth
@@ -40,16 +40,16 @@ class monte_carlo_search_tree:
 		current_node.add_exploration_noise()
 
 		while relative_depth_level < self.max_search_depth and not found_leaf:
-			should_pick_random_node = self.random_rollout_metric(self, current_node)
+			#should_pick_random_node = self.random_rollout_metric(self, current_node)
 			current_node_has_no_children = len(current_node.children.keys()) == 0
-
-			if (should_pick_random_node or current_node_has_no_children) and len(current_node.children) != self.children_count:
+			new_node = None
+			if current_node_has_no_children:# and len(current_node.children) != self.children_count:
 				# TODO : add something to invalidate invalid states to make search easier when bootstraping
 				new_node = current_node.get_a_children_node(self.children_count)
 				if model is not None and not new_node.has_init:
 					self.set_values_for_expand_a_node(new_node, model)
 					found_leaf = True
-			else:
+			if new_node is None:
 				new_node = self.select(current_node.children)
 
 			current_node = new_node
@@ -79,17 +79,32 @@ class monte_carlo_search_tree:
 		"""
 		cumulative_discounted_reward = 0
 		visited_nodes = 0
-		while leaf_node is not None:
-			node_level_diff = depth - leaf_node.depth
-			cumulative_discounted_reward += (discount ** (node_level_diff) * leaf_node.reward) + leaf_node.value_of_model * discount ** visited_nodes
+		value = leaf_node.value_of_model.item() if torch.is_tensor(leaf_node.value_of_model) else leaf_node.value_of_model
+		assert type(value) in [int, float], "value should be defined correctly {} {}".format(value, type(value))
+		while leaf_node is not None and leaf_node != self.root:
+			node_level_diff = depth - visited_nodes #leaf_node.depth
+#			cumulative_discounted_reward += (discount ** (node_level_diff) * leaf_node.reward) + leaf_node.value_of_model * discount ** visited_nodes
 
+			leaf_node.value += value
 			leaf_node.explored_count += 1
+			leaf_node.min_max_node_tracker.update(leaf_node.node_value())
 			visited_nodes += 1
+			
+			reward = leaf_node.reward.item() if torch.is_tensor(leaf_node.reward) else leaf_node.reward
+			leaf_value = leaf_node.value_of_model.item() if torch.is_tensor(leaf_node.value_of_model) else leaf_node.value_of_model
+			assert type(value) in [int, float], "value should be defined correctly {} {}".format(value, type(value))
+			assert type(reward) in [int, float], "reward should be defined correctly {}".format(reward)
+			discounted_reward = (discount ** (node_level_diff) * reward)
+			discounted_value = leaf_value * discount ** visited_nodes
+			# TODO : ASSUMING A 0 TO 1 REWARD
+			assert 0 <= discounted_reward <= 1
+			assert 0 <= discounted_value <= 1
+			value += discounted_reward + discounted_value
 
 			leaf_node.cumulative_discounted_reward = cumulative_discounted_reward
 			leaf_node = leaf_node.parrent
 
-		return cumulative_discounted_reward
+		return value #cumulative_discounted_reward
 
 	def select(self, nodes):
 		"""
@@ -136,7 +151,7 @@ class monte_carlo_search_tree:
 
 		delta_depth = 0
 		visited_nodes = 0
-		while delta_depth < self.max_search_depth and visited_nodes < 30:
+		while delta_depth < self.max_search_depth:# and visited_nodes < 30:
 			output_node = self.expand(node, model)
 			delta_depth = (output_node.depth - node.depth)
 			self.backpropgate(output_node, delta_depth)
@@ -212,9 +227,12 @@ class monte_carlo_search_tree:
 			generated_current_root = create_node(node, create=True)
 			dot.edge(generated_current_root, create_node(child_nodes))
 
-	def draw(self, show_only_used_edges=False):
+	def draw(self, show_only_used_edges=False, view_only=False):
 		dot = Digraph(comment='The search tree', format='png')
 		self.construct_tree(dot, self.originale_root, show_only_used_edges)
 		file_name = 'search-tree_{time}'.format(time=time.time())
-		dot.render(file_name)
-		return file_name + '.png'
+		if view_only:
+			dot.view(tempfile.mktemp('.gv'))
+		else:
+			dot.render(file_name)
+			return file_name + '.png'

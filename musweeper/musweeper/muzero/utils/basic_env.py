@@ -6,15 +6,15 @@ class BasicEnv(gym.Env):
 	Basic env for testing model. 
 	The model should be able to learn the state changees.
 	"""
-	def __init__(self):
+	def __init__(self, state_size=2):
 		self.round = 0
-		self.state_size = 2
-		self.action_size = 2
+		self.state_size = state_size
+		self.action_size = self.state_size
 		self.timeout = 10
 
 	@property
 	def active_index(self):
-		return int(self.round % 2 == 0)
+		return int(self.round % self.state_size == 0)
 
 	@property
 	def state(self):
