@@ -28,6 +28,7 @@ setuptools.setup(
         'numpy',
         'graphviz',
         'line_profiler',
-        'gym'
+        'gym',
+   #     f"gym_minesweeper @ git+https://github.com/Zikoat/gym-minesweeper#egg=gym_minesweeper"
     ]
 )

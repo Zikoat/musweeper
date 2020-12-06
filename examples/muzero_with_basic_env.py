@@ -38,10 +38,12 @@ def train(model, env):
 	from hydra.reports.model_evaluation_report import model_report
 
 	game_score = []
-	optimizer = optim.Adam(model.parameters(), lr=3e-4, weight_decay=0.01)
+#	optimizer = optim.Adam(model.parameters(), lr=3e-4, weight_decay=0.01)
+	# muzer uses a high learning rate, maybe this solves the lazy loss function
+	optimizer = optim.Adam(model.parameters(), lr=0.01, weight_decay=0.01)
 
 	game_replay_buffer = replay_buffer()
-	timeout = clock(60 * 15)
+	timeout = clock(60 * 30)
 	i = 0
 	print_interval = 15
 	update_interval = 1
@@ -96,8 +98,9 @@ def train(model, env):
 	report.send_report()
 
 if __name__ == "__main__":
-	env = BasicEnv(state_size=3)
+	env = BasicEnv(state_size=2)
 
 	representation, dynamics, prediction = create_model(env)
 	model = muzero(env, representation, dynamics, prediction, max_search_depth=3)
 	train(model, env)
+

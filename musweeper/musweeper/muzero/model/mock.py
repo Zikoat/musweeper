@@ -17,7 +17,9 @@ class mock_model:
 
 	def __call__(self, *args):
 		if hasattr(self, 'outputs'):
-			return self.outputs.pop(0)
+			fifo = self.outputs.pop(0)
+			output = fifo if not type(fifo) == list else list(map(lambda x: x.float(), fifo))
+			return output
 		elif hasattr(self, 'custom_generator'):
 			return self.custom_generator(*args)
 		else:

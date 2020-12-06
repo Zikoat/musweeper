@@ -1,6 +1,9 @@
 import unittest
 from .monte_carlo import *
 from .node import *
+from ..utils.basic_env import *
+from ..model.mock import *
+from ..model.muzero import *
 
 class TestMonteCarlo(unittest.TestCase):
 	def test_should_expand_tree(self):
@@ -16,7 +19,7 @@ class TestMonteCarlo(unittest.TestCase):
 
 		max_search_depth = 3
 		# even if rollout is False, it will do rollout since none of the nodes has a children (yet)
-		tree = monte_carlo_search_tree(root, max_search_depth=max_search_depth, random_rollout_metric=lambda tree, node: False)
+		tree = monte_carlo_search_tree(None, max_search_depth=max_search_depth, random_rollout_metric=lambda tree, node: False)
 		final_expanded_node = root
 		for _ in range(max_search_depth ** 2):
 			final_expanded_node = tree.expand(final_expanded_node)
@@ -43,19 +46,23 @@ class TestMonteCarlo(unittest.TestCase):
 
 		max_search_depth = 3
 		# even if rollout is False, it will do rollout since none of the nodes has a children (yet)
-		tree = monte_carlo_search_tree(root, max_search_depth=max_search_depth, random_rollout_metric=lambda tree, node: False)
+		tree = monte_carlo_search_tree(None, max_search_depth=max_search_depth, random_rollout_metric=lambda tree, node: False)
 		tree.root = root
 
-		final_expanded_node = root
-		for _ in range(max_search_depth ** 2):
-			final_expanded_node = tree.expand(final_expanded_node)
-#		assert final_expanded_node.depth == max_search_depth
+		final_expanded_node = tree.expand(root)
+		assert final_expanded_node.depth == max_search_depth
 		assert len(root.children.values()) > 0
+		assert 0 == tree.root.upper_confidence_boundary()
 		assert root == tree.root
 		tree.update_root(None, tree.root.get_best_action())
 
 		assert (root.depth + 1) == tree.root.depth
-
+		assert len(tree.root.children) > 0
+		# since no model is connect we expect the value to be zero.	
+		values = [child_nodes.upper_confidence_boundary() for child_nodes in tree.root.children.values()]
+		assert 1 == len(values)
+		assert 0 == values[0]
+		assert 0  == tree.root.upper_confidence_boundary()
 
 	def test_monte_carlo_backpropgate(self):
 		"""
@@ -70,7 +77,7 @@ class TestMonteCarlo(unittest.TestCase):
 
 		max_search_depth = 3
 		# even if rollout is False, it will do rollout since none of the nodes has a children (yet)
-		tree = monte_carlo_search_tree(root, max_search_depth=max_search_depth, random_rollout_metric=lambda tree, node: False)
+		tree = monte_carlo_search_tree(None, max_search_depth=max_search_depth, random_rollout_metric=lambda tree, node: False)
 		final_expanded_node = root
 		for _ in range(max_search_depth ** 2):
 			final_expanded_node = tree.expand(final_expanded_node)
@@ -89,7 +96,47 @@ class TestMonteCarlo(unittest.TestCase):
 		assert 0 < tree.backpropgate(final_expanded_node, depth=max_search_depth, discount=1)
 		for child_nodes in root.children.values():
 			assert 0 < child_nodes.upper_confidence_boundary()
-	
+
+	def test_that_node_values_propgate_correctly_with_model(self):
+		max_search_depth = 1
+		env = BasicEnv()
+		for best_action in range(2):
+			env.reset()
+			# output new state (as internal state representation) and reward
+			dynamics = mock_model(outputs=[
+				[torch.tensor([0, 1]), torch.tensor([1])],
+				[torch.tensor([0, 0]), torch.tensor([0])],
+				[torch.tensor([0, 1]), torch.tensor([1])],
+				[torch.tensor([0, 0]), torch.tensor([0])],
+				[torch.tensor([0, 1]), torch.tensor([1])],
+				[torch.tensor([0, 0]), torch.tensor([0])],
+				[torch.tensor([0, 1]), torch.tensor([1])],
+				[torch.tensor([0, 0]), torch.tensor([0])],
+			])
+			# output policy, value 
+			prediction = mock_model(outputs=[
+				[torch.tensor([0, 0]), torch.tensor([1])],
+				[torch.tensor([0, 0]), torch.tensor([0.2])],
+				[torch.tensor([0, 0]), torch.tensor([1])],
+				[torch.tensor([0, 0]), torch.tensor([0.2])],
+				[torch.tensor([0, 0]), torch.tensor([1])],
+				[torch.tensor([0, 0]), torch.tensor([0.2])],
+				[torch.tensor([0, 0]), torch.tensor([1])],
+				[torch.tensor([0, 0]), torch.tensor([0.2])],
+			])
+			for i in prediction.outputs:
+				i[0][best_action] = 1
+			# output internal state representation
+			representation = mock_model(outputs=[
+				torch.tensor([0, 1]) # created before the search starts
+
+			])
+
+			model = muzero(env, representation, dynamics, prediction, max_search_depth)
+			output = model.plan_action(env.reset())
+			assert len(output) == 2
+			assert max(output, key=lambda x: x.score_metric()).node_id == best_action
+			
 
 if __name__ == '__main__':
 	unittest.main()

@@ -10,7 +10,7 @@ def transform_input(tensor):
 		tensor = torch.from_numpy(tensor)
 		tensor = torch.flatten(tensor) if tensor.dim() != 1 else tensor
 		tensor = tensor.float()
-	
+
 	if not tensor.is_cuda and torch.cuda.is_available():
 		return tensor.cuda()
 	return tensor
@@ -29,7 +29,7 @@ class component_dynamics(nn.Module, shared_backbone):
 	def __init__(self, representation_size):
 		super(component_dynamics, self).__init__()
 		shared_backbone.__init__(self)
-		self.shared_hidden_size = 64
+		self.shared_hidden_size = 16
 
 		self.preprocess_state = nn.Linear(representation_size, self.shared_hidden_size).to(self.device)
 		self.preprocess_action = nn.Linear(1, self.shared_hidden_size).to(self.device)
@@ -74,7 +74,6 @@ class component_dynamics(nn.Module, shared_backbone):
 		combined = torch.sigmoid(self.combined(torch.cat((state, action), dim=1)))
 		return torch.sigmoid(self.new_state(combined)), torch.sigmoid(self.reward(combined))
 
-
 class component_predictions(nn.Module, shared_backbone):
 	"""
 	The prediction component will learn the optimal state and value function
@@ -84,7 +83,7 @@ class component_predictions(nn.Module, shared_backbone):
 		super(component_predictions, self).__init__()
 		shared_backbone.__init__(self)
 
-		main_hidden_layer_size = 128
+		main_hidden_layer_size = 16
 		second_hidden_layer_size = main_hidden_layer_size // 2
 
 		self.preprocess_state = nn.Linear(representation_size, main_hidden_layer_size).to(self.device)
@@ -133,7 +132,7 @@ class component_representation(nn.Module, shared_backbone):
 		super(component_representation, self).__init__()
 		shared_backbone.__init__(self)
 
-		main_hidden_layer_size = 128
+		main_hidden_layer_size = 16
 		second_hidden_layer_size = main_hidden_layer_size // 2
 
 		self.preprocess_state = nn.Linear(env_size, main_hidden_layer_size).to(self.device)

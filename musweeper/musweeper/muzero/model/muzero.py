@@ -4,6 +4,7 @@ from .components import *
 
 import operator
 from functools import reduce
+
 def prod(factors):
     return reduce(operator.mul, factors, 1)
 
@@ -18,7 +19,7 @@ def create_model(env, testing=False, config={}):
 		return representation, dynamics, prediction
 	else:
 #		env_size = env.state_size if not hasattr(env, 'observation_space') else env.observation_space.shape
-		env_size = env.state_size# if not hasattr(env, 'observation_space') else env.observation_space.shape
+		env_size = env.state_size if not hasattr(env, 'observation_space') else env.observation_space.shape
 		env_size = env_size if type(env_size) in [int, float] else prod(env_size)
 
 		dynamics = component_dynamics(representation_size)
@@ -54,14 +55,13 @@ class muzero(nn.Module):
 		3 - When we find a leaf node / episode is over, we store the path in a replay buffer (used for training)
 		"""
 		internal_muzero_state = self.representation(current_state)
-
 		if self.tree is None:
 			self.tree = monte_carlo_search_tree(internal_muzero_state, self.max_search_depth, action_size=self.action_size)
 			self.tree.root.environment_state = current_state
+
 		# loop over all possible actions from current node
-		last_nodes = [
-			self.tree.expand_node(node, self) for node in range(self.action_size)
-		]
+		for action in range(self.action_size):
+			self.tree.expand_node(action, self)
 		return list(self.tree.root.children.values())
 
 	def update(self, state, action):

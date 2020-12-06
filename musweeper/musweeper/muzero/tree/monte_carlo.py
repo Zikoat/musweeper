@@ -10,7 +10,7 @@ class monte_carlo_search_tree:
 	def __init__(self, root_state, max_search_depth, action_size=2, random_rollout_metric=None):
 		self.max_search_depth = max_search_depth
 		self.timeout = 10
-
+		assert root_state is None or torch.is_tensor(root_state), " {} {}".format(root_state, type(root_state))
 		self.root = node(parrent=None, hidden_state=root_state)
 		self.originale_root = self.root
 		self.children_count = action_size
@@ -40,11 +40,9 @@ class monte_carlo_search_tree:
 		current_node.add_exploration_noise()
 
 		while relative_depth_level < self.max_search_depth and not found_leaf:
-			#should_pick_random_node = self.random_rollout_metric(self, current_node)
 			current_node_has_no_children = len(current_node.children.keys()) == 0
 			new_node = None
-			if current_node_has_no_children:# and len(current_node.children) != self.children_count:
-				# TODO : add something to invalidate invalid states to make search easier when bootstraping
+			if current_node_has_no_children:
 				new_node = current_node.get_a_children_node(self.children_count)
 				if model is not None and not new_node.has_init:
 					self.set_values_for_expand_a_node(new_node, model)
@@ -65,7 +63,7 @@ class monte_carlo_search_tree:
 		next_state, reward = model.dynamics(state, action_tensor)
 		policy, value_function = model.prediction(state)
 		new_node.on_node_creation(next_state, reward, policy, value_function)#, next_state_policy, model.dynamics)
-		
+
 		if not is_child_node:
 			next_state_policy, _ = model.prediction(next_state)
 			next_state_policy = next_state_policy[0] if len(next_state_policy.shape) > 1 else next_state_policy
@@ -141,13 +139,8 @@ class monte_carlo_search_tree:
 		if type(node) == int:
 			node = self.root.create_children_if_not_exist(node)
 
-		if model:
+		if model and not node.has_init:
 			self.set_values_for_expand_a_node(node, model)
-#			state, action_tensor = self.root.hidden_state.reshape((1, -1)), torch.tensor([node.node_id]).float().reshape((1, -1))
-#			next_state, reward = model.dynamics(state, action_tensor)
-#			policy, value_function = model.prediction(state)
-#			next_state_policy, _ = model.prediction(next_state)
-#			node.on_node_creation(next_state, reward, policy, value_function)#, next_state_policy, model.prediction, model.dynamics)
 
 		delta_depth = 0
 		visited_nodes = 0

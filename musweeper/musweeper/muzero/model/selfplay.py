@@ -3,7 +3,7 @@ import torch
 import numpy as np
 
 
-def play_game(model, env, self_play=False):
+def play_game(model, env, self_play=False, custom_end_function=None, custom_reward_function=None):
 	model.reset()
 	observation = env.reset()
 	game_history = game_event_history()
@@ -31,6 +31,10 @@ def play_game(model, env, self_play=False):
 			best_action = best_node.node_id
 
 			observation, reward, done = env.step(best_action)[:3]
+			if custom_end_function is not None:
+				done = custom_end_function(env)
+			if custom_reward_function is not None:
+				reward = custom_reward_function(env, done)
 			game_history.add(
 				reward=torch.tensor([reward]).reshape((1, -1)),
 				action=best_action,

@@ -18,7 +18,7 @@ class TestMuzero(unittest.TestCase):
 		tree_paths = model.plan_action(env.state)
 		assert len(tree_paths) == 2
 		for paths in tree_paths:
-			assert paths.depth - 1 == max_search_depth
+			assert paths.depth == 1
 			assert torch.is_tensor(paths.reward)
 			assert torch.is_tensor(paths.hidden_state)
 
@@ -36,26 +36,29 @@ class TestMuzero(unittest.TestCase):
 		while not done:
 			output = model.plan_action(env.state)
 			best_node = max(output, key=lambda node: node.score_metric())
+			assert best_node.depth == len(actions_history) + 1
+			# both children should have a value 
+			assert best_node.upper_confidence_boundary() < sum([i.upper_confidence_boundary() for i in output])
 			best_action = best_node.node_id
 			observation, reward, done = env.step(best_action)
 			model.update(observation, best_action)
 			depth_length += 1
 			actions_history.append(best_action)
-		#	break
 
 		assert depth_length == model.tree.root.depth
-		current_root = model.tree.originale_root
 		assert 0 < len(actions_history)
-		max_children_count = 0
 		assert len(list(set(actions_history))) > 1
+
+		current_root = model.tree.originale_root
+		max_children_count = 0
 		while 0 < len(actions_history):
 			action = actions_history.pop(0)
 			other_children = {
 				key : value for key, value in current_root.children.items() if key != action
 			}
 			node_action = current_root.children[action]
-#			for _, value in other_children.items():
-#				assert value.score_metric() < node_action.score_metric(), "{} vs {}, level {}".format(value.score_metric(), node_action.score_metric(), node_action.depth)
+			for _, value in other_children.items():
+				assert value.score_metric() < node_action.score_metric(), "{} vs {}, level {}".format(value.score_metric(), node_action.score_metric(), node_action.depth)
 
 			max_children_count = max(max_children_count, len(current_root.children))
 				
@@ -63,14 +66,13 @@ class TestMuzero(unittest.TestCase):
 			assert type(node_action.score_metric()) in [int, float, np.float64]
 			assert not np.isnan(node_action.score_metric())
 			assert node_action.prior > 0
-#			assert node_action.normalize(node_action.node_value()) <= 1
 	
 			active_nodes = list(filter(lambda x: x.environment_state is not None, node_action.children.values()))
 			if len(actions_history) > 0:
 				assert 1 == len(active_nodes), "bad state at {}".format(node_action.depth)
 			current_root = node_action
 		assert 2 == max_children_count
-		
+
 if __name__ == '__main__':
 	unittest.main()
 

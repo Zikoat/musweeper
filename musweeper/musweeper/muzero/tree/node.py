@@ -48,6 +48,10 @@ class min_max_node_tracker:
 
 class node:
 	def __init__(self, parrent, node_id=None, hidden_state=None, prior=0):
+		assert type(parrent) in [node, type(None)], type(parrent)
+		assert hidden_state is None or torch.is_tensor(hidden_state), "{} {}".format(type(hidden_state), hidden_state)
+		assert node_id is None or type(node_id) == int
+		
 		self.children = {}
 		self.node_id = node_id
 		self.parrent = parrent
@@ -176,10 +180,6 @@ class node:
 		assert not np.isnan(node_value), "node_value is nan"
 		assert not np.isnan(value), "value is nan {}, {}".format(value, self.min_max_node_tracker)
 		return reward + value
-#		explored = self.parrent.explored_count if self.parrent else 0
-#		q = self.parrent.q if self.parrent else 0
-#		parrent_visit_dot_parrent_q = explored * q# + (self.cumulative_discounted_reward.item() if torch.is_tensor(self.cumulative_discounted_reward) else self.cumulative_discounted_reward)
-#		return parrent_visit_dot_parrent_q/(explored + 1)
 
 	@property
 	def N(self):
@@ -207,7 +207,7 @@ class node:
 			return 0
 		return self.value_sum / self.explored_count
 
-	def on_node_creation(self, hidden_state, reward, policy, value):#, prediction, dynamics):
+	def on_node_creation(self, hidden_state, reward, policy, value):
 		"""
 		When a node is created this callback will be used
 
@@ -228,18 +228,6 @@ class node:
 		policy = policy[0] if len(policy.shape) > 1 else policy
 		policy_sum = torch.sum(policy)
 		self.prior = (torch.exp(policy[self.node_id]) / policy_sum).item()
-
-		"""
-		next_state_policy, next_value = prediction(hidden_state)
-		next_policy_sum = torch.sum(next_state_policy[0])
-		for action in range(next_state_policy[0].shape[0]):
-			p = (next_state_policy[0][action] / next_policy_sum).item()
-			next_state, reward = dynamics(hidden_state, torch.tensor([action]).float())
-			
-			self.children[action] = node(parrent=self, node_id=action, hidden_state=next_state, prior=p)
-			self.children[action].reward = reward
-			self.children[action].value = next_value[]
-		"""
 
 	def get_a_children_node(self, children_count):
 		"""
