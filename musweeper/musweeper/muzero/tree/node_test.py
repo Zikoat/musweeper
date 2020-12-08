@@ -1,5 +1,7 @@
 import unittest
+
 from .node import *
+
 
 class TestNode(unittest.TestCase):
     def test_explored_without_win_rate_vs_unexplored(self):
@@ -40,7 +42,6 @@ class TestNode(unittest.TestCase):
         # monte carlo will faveour model that has been explored with win rate over failed models
         assert score_node_has_explored > score_node_not_explored
 
-
     def test_explored_ucb(self):
         """
         Search value should favour explored nodes vs already explored failed paths
@@ -65,7 +66,7 @@ class TestNode(unittest.TestCase):
         score_node_with_high_prior = childreN_node_with_high_prior.upper_confidence_boundary()
 
         # monte carlo will faveour model that has been explored with win rate over failed models
-        assert score_node_with_high_prior < score_node_has_explored 
+        assert score_node_with_high_prior < score_node_has_explored
 
     def test_explored_with_high_win_rate_vs_low(self):
         """
@@ -95,7 +96,7 @@ class TestNode(unittest.TestCase):
 
     def test_ucb_non_parrent_should_give_zero(self):
         parent_node = node(None)
-        assert parent_node.upper_confidence_boundary() == 0        
+        assert parent_node.upper_confidence_boundary() == 0
 
     def test_node_min_max_tracker(self):
         parent_node = node(None)

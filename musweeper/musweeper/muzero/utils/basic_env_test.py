@@ -1,6 +1,9 @@
 import unittest
-from .basic_env import *
+
 import torch
+
+from .basic_env import *
+
 
 class TestBasicEnv(unittest.TestCase):
     def test_basic_env(self):

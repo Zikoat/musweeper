@@ -1,6 +1,7 @@
 from collections import deque
 import random
 from collections import namedtuple
+import torch
 
 class game_event_history:
 	def __init__(self):
@@ -9,8 +10,8 @@ class game_event_history:
 		self.historic_reward = 0
 
 	def add(self, reward, action, value, state=None):
-		if type(reward) in [int, float]:
-			self.historic_reward += reward
+		if type(reward) in [int, float] or (torch.is_tensor(reward)):
+			self.historic_reward += reward if not torch.is_tensor(reward) else reward.item()
 		self.history.append(self.event(reward, action, value, state))
 
 	@property

@@ -1,12 +1,14 @@
 import unittest
-from .training_loop import *
-import unittest
-from ..model.muzero import *
-from ..model.mock import *
-from .basic_env import *
-from ..model.selfplay import play_game
-import torch
+
 import numpy as np
+import torch
+
+from ..model.mock import *
+from ..model.muzero import *
+from ..model.selfplay import play_game
+from .basic_env import *
+from .training_loop import *
+
 
 class TestTrainingLoop(unittest.TestCase):
 	def test_model_debugger(self):

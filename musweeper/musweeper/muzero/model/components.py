@@ -1,7 +1,6 @@
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
-from torch.nn.modules import transformer
 from ..utils.debugger import *
 import numpy as np
 
@@ -12,8 +11,8 @@ def transform_input(tensor):
 		tensor = tensor.float()
 
 	if not tensor.is_cuda and torch.cuda.is_available():
-		return tensor.cuda()
-	return tensor
+		return tensor.to(dtype=torch.float32).cuda()
+	return tensor.to(dtype=torch.float32)
 
 class shared_backbone:
 	def __init__(self):
@@ -57,6 +56,7 @@ class component_dynamics(nn.Module, shared_backbone):
 		torch.tensor
 			the predicted reward from the given action 
 		"""
+		self.debugger.start_track_time("dynamics")
 		if len(state.shape) == 1:
 			state = state.reshape((1, -1))
 
@@ -72,6 +72,7 @@ class component_dynamics(nn.Module, shared_backbone):
 		action = torch.sigmoid(action.view(action.size(0), -1))
 
 		combined = torch.sigmoid(self.combined(torch.cat((state, action), dim=1)))
+		self.debugger.stop_track_time("dynamics")
 		return torch.sigmoid(self.new_state(combined)), torch.sigmoid(self.reward(combined))
 
 class component_predictions(nn.Module, shared_backbone):
@@ -110,6 +111,7 @@ class component_predictions(nn.Module, shared_backbone):
 		"""
 		if len(state.shape) == 1:
 			state = state.reshape((1, -1))
+		self.debugger.start_track_time("predictions")
 		self.debugger.start_forward("predictions")
 		state = transform_input(state)
 		self.debugger.add_element("predictions", state)
@@ -120,6 +122,7 @@ class component_predictions(nn.Module, shared_backbone):
 		policy, value = torch.softmax(torch.sigmoid(self.policy(combined)), dim=1), torch.sigmoid(self.value(combined))
 		self.debugger.add_element("predictions", (policy, value))
 		self.debugger.stop_forward("predictions")
+		self.debugger.stop_track_time("predictions")
 		return policy, value
 
 class component_representation(nn.Module, shared_backbone):
@@ -155,9 +158,12 @@ class component_representation(nn.Module, shared_backbone):
 		"""
 		if len(state.shape) == 1:
 			state = state.reshape((1, -1))
+		self.debugger.start_track_time("representation")
 		state = transform_input(state)
 		state = torch.sigmoid(self.preprocess_state(state))
 		combined = torch.sigmoid(self.combined(state))
 
+		self.debugger.stop_track_time("representation")
 		return torch.sigmoid(self.representation(combined))
+
 

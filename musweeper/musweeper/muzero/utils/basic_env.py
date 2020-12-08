@@ -1,5 +1,6 @@
-import torch
 import gym
+import torch
+
 
 class BasicEnv(gym.Env):	
 	"""

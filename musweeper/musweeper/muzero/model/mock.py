@@ -1,11 +1,14 @@
 import torch
+from ..utils.debugger import *
 
 class mock_model:
 	"""
 	Basic mock model
 	Used instead of having to create a torch module.
 	"""
-	def __init__(self, outputs=None, output_dim=None, custom_generator=None):
+	def __init__(self, outputs=None, output_dim=None, custom_generator=None, name=""):
+		self.debugger = model_debugger()
+		self.name = name
 		if outputs is not None:
 			self.outputs = outputs
 		elif output_dim is not None:
@@ -24,3 +27,10 @@ class mock_model:
 			return self.custom_generator(*args)
 		else:
 			return torch.rand(self.output_dim)
+
+	def __repr__(self):
+		return self.__str__()
+
+	def __str__(self):
+		return self.name
+		

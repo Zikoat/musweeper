@@ -1,14 +1,15 @@
 from ..utils.game_history import game_event_history
 import torch
 import numpy as np
+from ..model.components import transform_input
 
-
-def play_game(model, env, self_play=False, custom_end_function=None, custom_reward_function=None):
+def play_game(model, env, self_play=False, custom_end_function=None, custom_reward_function=None, timeout_steps=100):
 	model.reset()
 	observation = env.reset()
 	game_history = game_event_history()
 	done = False
-	while not done:
+	step = 0
+	while not done and step < timeout_steps:
 		if self_play:
 			action, policy = model.think(observation)
 			best_action = action.item()
@@ -20,17 +21,20 @@ def play_game(model, env, self_play=False, custom_end_function=None, custom_rewa
 				state=None
 			)
 		else:
-			state = observation
-			state = state if not isinstance(state, np.ndarray) else torch.from_numpy(state)
-			state = torch.flatten(state) if state.dim() != 1 else state
-			state = state.float()
+			model.prediction.debugger.start_track_time("game play thinking")
+			state = transform_input(observation)
+#			state = state if not isinstance(state, np.ndarray) else torch.from_numpy(state)
+#			state = torch.flatten(state) if state.dim() != 1 else state
+#			state = state.float()
 			output = model.plan_action(state)
 			best_node = max(output, key=lambda node: node.value)
 			best_value = model.tree.root.min_max_node_tracker.normalized(best_node.value)
-		#	print(best_node.value, best_value, model.tree.root.min_max_node_tracker)
 			best_action = best_node.node_id
-
+			model.prediction.debugger.stop_track_time("game play thinking")
+			
+			model.prediction.debugger.start_track_time("game play action")
 			observation, reward, done = env.step(best_action)[:3]
+			model.prediction.debugger.stop_track_time("game play action")
 			if custom_end_function is not None:
 				done = custom_end_function(env)
 			if custom_reward_function is not None:
@@ -42,6 +46,7 @@ def play_game(model, env, self_play=False, custom_end_function=None, custom_rewa
 				state=state.reshape((1, -1))
 			)
 			model.update(None, best_action)
+		step += 1
 	return game_history
 
 def selfplay_single_player(model, env, games=10):
