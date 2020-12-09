@@ -35,7 +35,7 @@ class muzero(nn.Module):
 	- dynamics -> returns next state and reward
 	- prediction
 	"""
-	def __init__(self, env, representation, dynamics, prediction, max_search_depth):
+	def __init__(self, env, representation, dynamics, prediction, max_search_depth, add_exploration_noise=True):
 		super(muzero, self).__init__()
 		self.action_size = prediction.policy.out_features if type(prediction) != mock_model else 2
 
@@ -46,6 +46,7 @@ class muzero(nn.Module):
 		self.max_search_depth = max_search_depth
 		self.tree = None
 		self.use_naive_search = False
+		self.add_exploration_noise = add_exploration_noise
 
 	def plan_action(self, current_state):
 		"""
@@ -56,7 +57,7 @@ class muzero(nn.Module):
 		"""
 		internal_muzero_state = self.representation(current_state)
 		if self.tree is None:
-			self.tree = monte_carlo_search_tree(internal_muzero_state, self.max_search_depth, action_size=self.action_size)
+			self.tree = monte_carlo_search_tree(internal_muzero_state, self.max_search_depth, action_size=self.action_size, add_exploration_noise=self.add_exploration_noise)
 			self.tree.root.environment_state = current_state
 
 		# loop over all possible actions from current node

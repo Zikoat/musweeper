@@ -10,7 +10,7 @@ from .node import *
 
 
 class monte_carlo_search_tree:
-    def __init__(self, root_state, max_search_depth, action_size=2, random_rollout_metric=None, top_k_nodes_to_search=5):
+    def __init__(self, root_state, max_search_depth, action_size=2, random_rollout_metric=None, top_k_nodes_to_search=5, add_exploration_noise=True):
         self.max_search_depth = max_search_depth
         self.timeout = 10
         assert root_state is None or torch.is_tensor(
@@ -18,12 +18,62 @@ class monte_carlo_search_tree:
         self.root = node(parrent=None, hidden_state=root_state)
         self.originale_root = self.root
         self.children_count = action_size
+        self.add_exploration_noise = add_exploration_noise
 
         # coin-flip
         self.random_rollout_metric = (lambda tree, node: random.randint(
             0, 2) == 1) if random_rollout_metric is None else random_rollout_metric
         self.top_k_nodes_to_search = top_k_nodes_to_search
 
+    def select_best_node(self, node, model):
+        """
+        Select best child node
+
+        Parameters
+        ----------
+        node : node
+            node to exploit
+
+        Returns
+        -------
+        node
+            best node
+        """
+        found_leaf = False
+        if len(node.children) == 0:
+            for action in range(self.children_count):
+                self.set_values_for_expand_a_node(node.create_node(action), model)
+            found_leaf = True
+        best_child_node = max(list(node.children.values()), key=lambda node: node.upper_confidence_boundary())
+        return best_child_node, found_leaf
+
+    def expand_node(self, node, model, max_leaf_node_count=100):
+        """
+        Expand node
+
+        Parameters
+        ----------
+        node : node
+                seed node
+        model : muzero
+                model used for predictions of reward
+
+        Returns
+        -------
+        node
+                the leaf node
+        """
+        if type(node) == int:
+            node = self.root.create_children_if_not_exist(node)
+
+        if model and not node.has_init:
+            self.set_values_for_expand_a_node(node, model)
+        
+        leaf_node_count = 0
+        while leaf_node_count < max_leaf_node_count:
+            self.backpropgate(self.expand(node, model), start_depth=node.depth)
+            leaf_node_count += 1
+    
     def expand(self, current_node=None, model=None):
         """
         Expand the search tree
@@ -43,23 +93,10 @@ class monte_carlo_search_tree:
         relative_depth_level = 0
         current_node = self.root if current_node is None else current_node
         found_leaf = False
-        current_node.add_exploration_noise()
-        start = time.time()
-        # and (time.time() - start) < 1:
+        if self.add_exploration_noise:
+            current_node.add_exploration_noise()
         while relative_depth_level < self.max_search_depth and not found_leaf:
-            current_node_has_no_children = len(
-                current_node.children.keys()) == 0
-            new_node = None
-            if current_node_has_no_children:
-                new_node = current_node.get_a_children_node(
-                    self.children_count)
-                if model is not None and not new_node.has_init:
-                    self.set_values_for_expand_a_node(new_node, model)
-                    found_leaf = True
-            if new_node is None:
-                new_node = self.select(current_node.children)
-
-            current_node = new_node
+            current_node, found_leaf = self.select_best_node(current_node, model)
             relative_depth_level += 1
         return current_node
 
@@ -74,7 +111,10 @@ class monte_carlo_search_tree:
             policy, value_function = model.prediction(state)
             new_node.on_node_creation(
                 next_state, reward, policy, value_function)
+        else:
+            next_state = new_node.hidden_state
 
+        # create the child actions from the current node and assign a prior based on model output
         if not is_child_node:
             next_state_policy, _ = model.prediction(next_state)
             next_state_policy = next_state_policy[0] if len(
@@ -89,7 +129,7 @@ class monte_carlo_search_tree:
                 self.set_values_for_expand_a_node(
                     new_node.children[action], model, is_child_node=True)
 
-    def backpropgate(self, leaf_node, depth, discount=0.1):
+    def backpropgate(self, leaf_node, start_depth, discount=0.1):
         """
         When a leaf node is found, the values will be backpropgated and updated upwards
         """
@@ -99,8 +139,10 @@ class monte_carlo_search_tree:
             leaf_node.value_of_model) else leaf_node.value_of_model
         assert type(value) in [
             int, float], "value should be defined correctly {} {}".format(value, type(value))
+
+        depth = (leaf_node.depth - start_depth)
         while leaf_node is not None and leaf_node != self.root:
-            node_level_diff = depth - visited_nodes  # leaf_node.depth
+            node_level_diff = depth - visited_nodes
 #			cumulative_discounted_reward += (discount ** (node_level_diff) * leaf_node.reward) + leaf_node.value_of_model * discount ** visited_nodes
 
             leaf_node.value += value
@@ -128,52 +170,7 @@ class monte_carlo_search_tree:
 
         return value  # cumulative_discounted_reward
 
-    def select(self, nodes):
-        """
-        Select best node
 
-        Parameters
-        ----------
-        nodes : list
-                list of nodes
-
-        Returns
-        -------
-        node
-                best node
-        """
-        return max(list(nodes.values()), key=lambda node: node.score_metric())
-
-    def expand_node(self, node, model):
-        """
-        Expand node
-
-        Parameters
-        ----------
-        node : node
-                seed node
-        model : muzero
-                model used for predictions of reward
-
-        Returns
-        -------
-        node
-                the leaf node
-        """
-        if type(node) == int:
-            node = self.root.create_children_if_not_exist(node)
-
-        if model and not node.has_init:
-            self.set_values_for_expand_a_node(node, model)
-
-        delta_depth = 0
-        visited_nodes = 0
-        while delta_depth < self.max_search_depth:  # and visited_nodes < 30:
-            output_node = self.expand(node, model)
-            delta_depth = (output_node.depth - node.depth)
-            self.backpropgate(output_node, delta_depth)
-            visited_nodes += 1
-        return output_node
 
     def update_root(self, state, action):
         """
