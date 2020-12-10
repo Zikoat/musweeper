@@ -89,28 +89,30 @@ xxxxxxxxxx""",
                          })
 
     def test_create_probability_matrix_from_solution(self):
-        for i in itertools.product([False, True], repeat=1):
-            env = gym.make("MinesweeperGuided-v0", width=3, height=2, mine_count=1)
-            env.reset()
+        env = gym.make("MinesweeperGuided-v0", width=3, height=4, mine_count=3)
+        env.reset()
 
-            # Remove all the mines
-            env.mines = np.zeros((env.width, env.height))
-            # Plant a mine in the bottom middle cell
-            env.mines[1, 1] = 1
+        # Remove all the mines
+        env.mines = np.zeros((env.width, env.height))
+        # Plant mines
+        env.mines[2, 2] = 1
+        env.mines[0, 1] = 1
 
-            # Open top middle cell
-            env.step(1)
-            # Open top right cell
-            env.step(2)
+        # Open top middle cell
+        env.step(0)
 
-            self.assertEqual(env.render("ansi"), "x11\nxxx")
+        # Open top right cell
+        ob, reward, episode_over, info = env.step(2)
+        print(env.render("ansi"))
+        print(ob)
+        self.assertEqual(env.render("ansi"), "11.\nx21\nxxx\nxxx")
 
-            result = self.env.api_solve({"board": env.get_ansi_board(), "total_mines": env.mines_count})
+        result = self.env.api_solve({"board": env.get_ansi_board(), "total_mines": env.mines_count})
 
-            probability_matrix = env.get_probability_matrix()
-            expected_probability_matrix = np.array([[0, 0], [0, 0.5], [0, 0.5]])
+        probability_matrix = env.get_probability_matrix()
+        expected_probability_matrix = np.array([[0,1,0,1/3],[0,0,1/2,1/3],[0,0,1/2,1/3]])
 
-            np.testing.assert_array_equal(expected_probability_matrix, probability_matrix)
+        np.testing.assert_array_equal(expected_probability_matrix, probability_matrix)
 
 
 if __name__ == '__main__':

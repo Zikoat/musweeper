@@ -17,17 +17,21 @@ class MinesweeperGuidedEnv(MinesweeperEnv):
     which contains the probability that each cell is a mine.
     """
 
-    def __init__(self, width=8, height=8, mine_count=10, flood_fill=True, enable_guide=True):
-        super().__init__(width, height, mine_count, flood_fill)
+    def __init__(self, enable_guide=True, **kwargs):
+        super().__init__(debug=False, **kwargs)
+        self.enable_guide = enable_guide
         self.observation_space = gym.spaces.Box(low=np.float32(-2),
                                                 high=np.float32(8),
                                                 shape=(2, self.width, self.height))
-        self.enable_guide = enable_guide
 
     def step(self, action):
         observation, *output = super(MinesweeperGuidedEnv, self).step(action)
-        observation = np.array([observation, self.get_probability_matrix()])
+        observation = self._get_guided_observation()
         return observation, *output
+
+    def _get_guided_observation(self):
+        return np.array([(super()._get_observation()),
+                         self.get_probability_matrix()])
 
     def get_probability_matrix(self):
         if not self.enable_guide or self._game_over():
@@ -35,9 +39,9 @@ class MinesweeperGuidedEnv(MinesweeperEnv):
 
         ansi_board = self.get_ansi_board()
         result = self.api_solve({"board": ansi_board, "total_mines": self.mines_count})
-
-        if "_other" in result:
-            matrix = np.array((self.width, self.height), result["_other"])
+        print(result)
+        if "_other" in result["solution"]:
+            matrix = np.full((self.width, self.height), result["solution"]["_other"])
         else:
             matrix = np.empty((self.width, self.height))
 
