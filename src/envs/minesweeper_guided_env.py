@@ -20,9 +20,10 @@ class MinesweeperGuidedEnv(MinesweeperEnv):
     def __init__(self, enable_guide=True, **kwargs):
         super().__init__(debug=False, **kwargs)
         self.enable_guide = enable_guide
-        self.observation_space = gym.spaces.Box(low=np.float32(-2),
-                                                high=np.float32(8),
-                                                shape=(2, self.width, self.height))
+        self.observation_space = gym.spaces.Box(
+            low=np.float32(-2),
+            high=np.float32(8),
+            shape=(2, self.width, self.height))
 
     def step(self, action):
         observation, *output = super(MinesweeperGuidedEnv, self).step(action)
@@ -38,10 +39,14 @@ class MinesweeperGuidedEnv(MinesweeperEnv):
             return np.empty((self.width, self.height))
 
         ansi_board = self.get_ansi_board()
-        result = self.api_solve({"board": ansi_board, "total_mines": self.mines_count})
-        print(result)
+        result = self.api_solve({
+            "board": ansi_board,
+            "total_mines": self.mines_count
+        })
+
         if "_other" in result["solution"]:
-            matrix = np.full((self.width, self.height), result["solution"]["_other"])
+            matrix = np.full((self.width, self.height),
+                             result["solution"]["_other"])
         else:
             matrix = np.empty((self.width, self.height))
 
@@ -50,19 +55,20 @@ class MinesweeperGuidedEnv(MinesweeperEnv):
                 x, y = self._parse_solver_coordinate(coordinate_string)
                 matrix[x - 1, y - 1] = mine_probability
 
-        assert not None in matrix
+        assert None not in matrix
         return matrix
 
     def get_ansi_board(self):
         return self.render("ansi")
 
-    def api_solve(self, payload):
+    @staticmethod
+    def api_solve(payload):
         try:
             return ast.literal_eval(subprocess.run(
                 [
                     "C:/users/sscho/anaconda3/envs/mrgris/python.exe",
                     "-c",
-                    "from minesweepr.minesweeper_util import api_solve;"+
+                    "from minesweepr.minesweeper_util import api_solve;" +
                     "print(api_solve({}))".format(payload)
                 ],
                 capture_output=True,
@@ -74,7 +80,8 @@ class MinesweeperGuidedEnv(MinesweeperEnv):
             raise SolverException("api_solve errored with message below:\n\n{}"
                                   .format(e.stderr.decode("utf-8")))
 
-    def _parse_solver_coordinate(self, coordinate):
+    @staticmethod
+    def _parse_solver_coordinate(coordinate):
         y, x = list(map(int, coordinate.split("-")))
         return x, y
 

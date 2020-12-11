@@ -1,7 +1,7 @@
 from unittest import TestCase
 import gym
 import numpy as np
-from src.envs.minesweeper_assisted_env import MinesweeperAssistedEnv
+
 
 class TestMinesweeperAssistedEnv(TestCase):
     @classmethod
@@ -13,7 +13,8 @@ class TestMinesweeperAssistedEnv(TestCase):
 
     def test_no_sure_cells_left(self):
         # todo this fails if we open a mine
-        ob, reward, episode_over, info = self.env.step(self.env.action_space.sample())
+        ob, reward, episode_over, info = self.env.step(
+            self.env.action_space.sample())
         if not episode_over:
             normal_observation = ob[0]
             guide_observation = ob[1]
@@ -41,8 +42,15 @@ class TestMinesweeperAssistedEnv(TestCase):
         self.assertEqual(1, info["unnecessary steps"])
 
     def test_legal_actions(self):
-        ob, reward, episode_over, info = self.env.step(self.env.action_space.sample())
-        # There should never be a legal action that has a 100% chance of being a mine
-        self.assertFalse(np.any((np.ravel(ob[1]).T[self.env.legal_actions()] == 1)))
-        # There should never be a legal action that has a 0% chance of being a mine
-        self.assertFalse(np.any((np.ravel(ob[1].T)[self.env.legal_actions()] == 0)))
+        ob, reward, episode_over, info = self.env.step(
+            self.env.action_space.sample())
+
+        # There shouldn't be a legal action that is known to be a mine
+        self.assertFalse(np.any(
+            np.ravel(ob[1]).T[self.env.legal_actions()] == 1)
+        )
+
+        # There shouldn't be a legal action that is known to be safe
+        self.assertFalse(np.any(
+            np.ravel(ob[1].T)[self.env.legal_actions()] == 0)
+        )

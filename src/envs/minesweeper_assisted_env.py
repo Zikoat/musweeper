@@ -24,15 +24,15 @@ class MinesweeperAssistedEnv(MinesweeperGuidedEnv):
 
         (board, probability_matrix), *output = super().step(action)
 
-        finished = False or not self.enable_assistance or not (self.unnecessary_steps == unnecessary_steps_before)
-        print("starting", finished)
+        finished = (False or
+                    not self.enable_assistance or
+                    not self.unnecessary_steps == unnecessary_steps_before)
+
         while not finished:
-            print("looping")
             finished = True
             for (x, y), cell_state in np.ndenumerate(board):
                 if cell_state == -1 and probability_matrix[x, y] < self.EPSILON:
                     self._open_cell(x, y)
-                    print("opening")
                     finished = False
             (board, probability_matrix) = self._get_guided_observation()
 

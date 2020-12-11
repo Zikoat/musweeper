@@ -5,6 +5,7 @@ from src.agents.random_agent import RandomAgent
 from src.evaluate_agent import evaluate_agent
 import numpy as np
 
+
 class TestEvaluateAgent(TestCase):
     def test_evaluate_random_agent(self):
         env = gym.make("Minesweeper-v0")

@@ -1,4 +1,3 @@
-
 class LocPrefAgent(object):
     """
     An agent using the help of the assisted environment, which always presses
@@ -9,6 +8,7 @@ class LocPrefAgent(object):
     most prevalent when starting a new game, and the first cell has to be
     opened.
     """
+
     def __init__(self, env, action_space):
         self.action_space = action_space
 
