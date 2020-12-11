@@ -5,8 +5,12 @@ import numpy as np
 
 class MinesweeperAssistedEnv(MinesweeperGuidedEnv):
     """
-    An assisted minesweeper environment is a minesweeper which uses the probability matrix generated from the guided environment to open the cells that are 100% likely to not contain mines. This means that the assistant might do multiple steps and continue to open cells, and might even finish the game on its own, but it will stop if it has to take a chance.
-    todo rewrite description of assisted minesweeper env.
+    An assisted minesweeper environment is a minesweeper which uses the
+    probability matrix generated from the guided environment to open the cells
+    that are 100% likely to not contain mines. This means that the assistant
+    might do multiple steps and continue to open cells, and will only stop if
+    there are no more cells that are completely safe, and it has to take a
+    chance to continue the game.
     """
 
     def __init__(self, enable_assistance=True, **kwargs):
@@ -51,5 +55,5 @@ class MinesweeperAssistedEnv(MinesweeperGuidedEnv):
 register(
     id='MinesweeperAssisted-v0',
     entry_point='src.envs.minesweeper_assisted_env:MinesweeperAssistedEnv',
-    nondeterministic=True,
+    nondeterministic=False,
 )
