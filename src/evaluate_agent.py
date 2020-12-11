@@ -1,6 +1,7 @@
 from gym import wrappers, logger
 import numpy as np
 
+
 def evaluate_agent(agent, env):
     # You can set the level to logger.DEBUG or logger.WARN if you
     # want to change the amount of output.
@@ -43,3 +44,5 @@ def evaluate_agent(agent, env):
     print("Best reward: {}".format(np.max(reward)))
     print("Best opened cells: {}/54".format(np.max(opened_cells)))
     print("Highest steps: {}".format(np.max(steps)))
+
+    return stats
