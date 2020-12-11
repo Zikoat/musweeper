@@ -5,3 +5,8 @@ register(
     entry_point='src.envs.minesweeper_guided_env:MinesweeperGuidedEnv',
     nondeterministic=False,
 )
+# todo noflood
+# todo Medium
+# todo Expert
+# todo GuidedExpert
+# todo AssistedExpert
