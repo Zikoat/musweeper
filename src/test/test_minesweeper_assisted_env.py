@@ -12,6 +12,7 @@ class TestMinesweeperAssistedEnv(TestCase):
         self.env.reset()
 
     def test_no_sure_cells_left(self):
+        # todo this fails if we open a mine
         ob, reward, episode_over, info = self.env.step(self.env.action_space.sample())
         if not episode_over:
             normal_observation = ob[0]

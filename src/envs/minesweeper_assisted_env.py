@@ -40,17 +40,17 @@ class MinesweeperAssistedEnv(MinesweeperGuidedEnv):
         done = self._is_done()
         info = self._get_info(game_over_before, action)
 
-        if unnecessary_steps_before - self.unnecessary_steps != 0:
-            print("unnecessary steps changed. 1:{}, 2:{}".format(unnecessary_steps_before, self.unnecessary_steps))
-        # todo move unnecessary steps increment check to assert invariants
-        # todo refactor this so it says "if unnecessary steps changed, the board and probability matrix should not change, and assert that unnecessary steps did not change.
-        print(probability_matrix)
-        print(board)
+        self.assert_assisted_invariants(unnecessary_steps_before)
 
         return np.array([board, probability_matrix]), reward, done, info
 
-    def assert_assisted_invariants(self):
-        assert not 0 in self.get_probability_matrix() # todo assert that when step is done, there are no 0% cells not opened.
+    def assert_assisted_invariants(self, prev_unnecessary_steps):
+        assert prev_unnecessary_steps - self.unnecessary_steps <= 1
+
+        (board, probability_matrix) = self._get_guided_observation()
+        for (x, y), cell_state in np.ndenumerate(board):
+            if cell_state == -1 and probability_matrix[x, y] < self.EPSILON:
+                assert False
 
 register(
     id='MinesweeperAssisted-v0',
