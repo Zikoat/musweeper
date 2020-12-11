@@ -47,7 +47,7 @@ class MinesweeperGuidedEnv(MinesweeperEnv):
 
         for coordinate_string, mine_probability in result["solution"].items():
             if coordinate_string != "_other":
-                x, y = self.parse_coordinate(coordinate_string)
+                x, y = self._parse_solver_coordinate(coordinate_string)
                 matrix[x - 1, y - 1] = mine_probability
 
         assert not None in matrix
@@ -74,7 +74,7 @@ class MinesweeperGuidedEnv(MinesweeperEnv):
             raise SolverException("api_solve errored with message below:\n\n{}"
                                   .format(e.stderr.decode("utf-8")))
 
-    def parse_coordinate(self, coordinate):
+    def _parse_solver_coordinate(self, coordinate):
         y, x = list(map(int, coordinate.split("-")))
         return x, y
 

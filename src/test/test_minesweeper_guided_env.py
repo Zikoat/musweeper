@@ -114,6 +114,5 @@ xxxxxxxxxx""",
 
         np.testing.assert_array_equal(expected_probability_matrix, probability_matrix)
 
-
 if __name__ == '__main__':
     unittest.main()

@@ -11,4 +11,4 @@ class TestEvaluateAgent(TestCase):
         env.reset()
         agent = RandomAgent(env)
         stats = evaluate_agent(agent, env)
-        self.assertTrue(np.all(stats[:,3] == 0))
+        self.assertTrue(np.all(stats[:, 3] == 0))
