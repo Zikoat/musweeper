@@ -39,3 +39,10 @@ class TestMinesweeperAssistedEnv(TestCase):
         self.assertEqual(48, info["opened cells"])
         self.assertLess(reward, 0.8888888888888888)
         self.assertEqual(1, info["unnecessary steps"])
+
+    def test_legal_actions(self):
+        ob, reward, episode_over, info = self.env.step(self.env.action_space.sample())
+        # There should never be a legal action that has a 100% chance of being a mine
+        self.assertFalse(np.any((np.ravel(ob[1]).T[self.env.legal_actions()] == 1)))
+        # There should never be a legal action that has a 0% chance of being a mine
+        self.assertFalse(np.any((np.ravel(ob[1].T)[self.env.legal_actions()] == 0)))

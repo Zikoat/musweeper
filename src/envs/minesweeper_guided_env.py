@@ -77,3 +77,10 @@ class MinesweeperGuidedEnv(MinesweeperEnv):
     def parse_coordinate(self, coordinate):
         y, x = list(map(int, coordinate.split("-")))
         return x, y
+
+    def legal_actions(self):
+        closed_cells = super(MinesweeperGuidedEnv, self).legal_actions()
+        # All the cells that are closed
+        probabilities = np.ravel(self.get_probability_matrix().T)[closed_cells]
+        # And are not 100% sure to be mines
+        return closed_cells[probabilities != 1]
