@@ -22,9 +22,9 @@ def evaluate_agent(agent, env):
         ob = env.reset()
         while True:
             action = agent.act(ob, reward, done)
-            ob, reward, done, _ = env.step(action)
+            ob, reward, done, info = env.step(action)
             if done:
-                stats.append([reward, *_.values()])
+                stats.append([reward, *info.values()])
                 break
     env.close()
 
