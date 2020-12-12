@@ -26,6 +26,8 @@ model.load("../ignore/muzero", optimizer, cpu=True)
 
 print(model.prediction(model.representation(torch.tensor([1, 0]))))
 print(model.prediction(model.representation(torch.tensor([0, 1]))))
+print(model.dynamics(model.representation(torch.tensor([0, 1])), 0))
+print(model.dynamics(model.representation(torch.tensor([0, 1])), 1))
 
 print(temperature_softmax(model.plan_action(torch.tensor([0, 1]))))
 print(temperature_softmax(model.plan_action(torch.tensor([1, 0]))))

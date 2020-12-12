@@ -60,6 +60,9 @@ class component_dynamics(nn.Module, shared_backbone):
 		if len(state.shape) == 1:
 			state = state.reshape((1, -1))
 
+		if type(action) == int:
+			action = torch.tensor([action])
+
 		if len(action.shape) == 1:
 			action = action.reshape((1, -1))
 

@@ -14,7 +14,7 @@ if __name__ == "__main__":
 	representation, dynamics, prediction = create_model(env)
 	model = muzero(env, representation, dynamics,
 				   prediction, max_search_depth=2)
-	optimizer = optim.Adam(model.parameters(), lr=0.01, weight_decay=0.01)
+	optimizer = optim.Adam(model.parameters(), lr=0.01)#, weight_decay=0.01)
 
 	timer = clock(60 * 10)
 	output = train(model, env, optimizer, timer_function=lambda: timer())
