@@ -24,16 +24,16 @@ def loss_from_game(model, game_history, debug=False):
 		assert game_history.history[t].state is not None, "state should not be none {}".format(
 			game_history.history[t])
 
-		model.reset()
-		model.plan_action(transform_input(game_history.history[t].state))
-		predicted_rollout_game_history = model.tree.get_rollout_path()
-		min_max_normalize = model.tree.root.min_max_node_tracker
-
+#		model.reset()
+		predicted_rollout_game_history = model.get_rollout_path(game_history.history[t].state, [
+			game_history.history[tk].action for tk in range(min(t + K, game_history.length))
+		])
+		
 		assert predicted_rollout_game_history.length > 0, "zero output, something is wrong in the search tree"
 		rollout_length = min(K, predicted_rollout_game_history.length)
 
 		assert rollout_length > 0, "zero output, something is wrong in the search tree"
-		assert model.tree.root.depth == 0, "the model shuld always start from a fresh tree"
+#		assert model.tree.root.depth == 0, "the model shuld always start from a fresh tree"
 		size = game_history.history[t].state.shape[-1]
 		for k in range(rollout_length):
 			if not (t + k) < game_history.length:
@@ -47,8 +47,7 @@ def loss_from_game(model, game_history, debug=False):
 			actual_action = transform_input(
 				torch.tensor([game_history.history[t + k].action]))
 
-			predicted_value = transform_input(torch.tensor([float(min_max_normalize.normalized(
-				predicted_rollout_game_history.history[k].value))], dtype=torch.float64))
+			predicted_value = transform_input(torch.tensor([float(predicted_rollout_game_history.history[k].value)], dtype=torch.float64))
 			actual_value = transform_input(torch.tensor(
 				[float(game_history.history[t + k].value)], dtype=torch.float64))
 
@@ -85,7 +84,9 @@ def loss_from_game(model, game_history, debug=False):
 
 			total_loss += loss_reward + loss_action + loss_value
 		entire_loss += scale_gradient(total_loss, 1 / rollout_length)
+	#	print(entire_loss)
 		debug = False
+#		model.reset()
 	return entire_loss
 
 

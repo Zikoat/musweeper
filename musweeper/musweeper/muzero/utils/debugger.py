@@ -50,7 +50,7 @@ class model_debugger:
 			epoch = self.epoch_write_counter[name]
 			self.epoch_write_counter[name] += 1
 		self.tenserboard_writer.add_scalar(name, value, epoch)
-	
+
 	def save_tensorboard(self):
 		self.tenserboard_writer.writer.close()
 

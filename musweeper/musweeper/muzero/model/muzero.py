@@ -79,18 +79,22 @@ class muzero(nn.Module):
 		policy, _ = self.prediction(self.representation(state))
 		return torch.argmax(policy), policy
 
-	def predict_from_path(self, state, actions):
-		predictions = []
+	def get_rollout_path(self, state, actions):
+		game_history = game_event_history()
 		model_world = self.representation(state)
-		predictions.append(
-			self.prediction(model_world)
-		)
 		for a in actions:
-			model_world, _ = self.dynamics(model_world, a)
-			predictions.append(
-				self.prediction(model_world)
+			model_world, reward = self.dynamics(model_world, a)
+			#action, policy = model.think(observation)
+			#best_action = action.item()
+			#observation, reward, done = env.step(best_action)[:3]
+			policy, value = self.prediction(model_world)
+			game_history.add(
+				action=policy,
+				reward=reward,
+				value=value,
+				state=None
 			)
-		return predictions	
+		return game_history
 
 	def save(self, optimizer):
 		torch.save({
