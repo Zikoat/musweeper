@@ -25,16 +25,14 @@ def play_game(model, env, self_play=False, custom_end_function=None, custom_rewa
 		else:
 			model.prediction.debugger.start_track_time("game play thinking")
 			state = transform_input(observation)
-			best_action = temperature_softmax(model.plan_action(state), T=(temperature))
-			temperature *= 0.9
-#			best_node = max(output, key=lambda node: node.value)
-#			best_value = model.tree.root.min_max_node_tracker.normalized(best_node.value)
-#			best_action = best_node.node_id
-#			model.prediction.debugger.stop_track_time("game play thinking")
-			
-#			model.prediction.debugger.start_track_time("game play action")
+
+			if model.use_naive_search:
+				best_action = model.plan_action_naive(state)
+			else:
+				best_action = temperature_softmax(model.plan_action(state), T=(temperature))
+				temperature *= 0.9
 			observation, reward, done = env.step(best_action)[:3]
-	#		model.prediction.debugger.stop_track_time("game play action")
+
 			if custom_end_function is not None:
 				done = custom_end_function(env)
 			if custom_reward_function is not None:
@@ -45,8 +43,9 @@ def play_game(model, env, self_play=False, custom_end_function=None, custom_rewa
 				value=0,
 				state=state.reshape((1, -1))
 			)
-			model.prediction.debugger.variable_log["max_depth"] = model.tree.root.max_depth
-			model.prediction.debugger.variable_log["best_explored"] = model.tree.root.children[best_action].explored_count
+			if not model.use_naive_search:
+				model.prediction.debugger.variable_log["max_depth"] = model.tree.root.max_depth
+				model.prediction.debugger.variable_log["best_explored"] = model.tree.root.children[best_action].explored_count
 			model.reset()
 			#model.update(None, best_action)
 		step += 1

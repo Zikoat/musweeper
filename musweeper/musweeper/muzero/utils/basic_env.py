@@ -7,11 +7,13 @@ class BasicEnv(gym.Env):
 	Basic env for testing model. 
 	The model should be able to learn the state changees.
 	"""
-	def __init__(self, state_size=2):
+	def __init__(self, state_size=2, super_simple=False):
 		self.round = 0
 		self.state_size = state_size
 		self.action_size = self.state_size
-		self.timeout = 10
+		self.timeout = 3
+		self.last_location = None
+		self.super_simple = super_simple
 
 	@property
 	def active_index(self):
@@ -28,7 +30,14 @@ class BasicEnv(gym.Env):
 			the output state
 		"""
 		state = torch.zeros((self.state_size))
-		state[self.active_index] = 1
+		if self.super_simple:
+			state = torch.randint(0, 1, (1, self.state_size))[0]
+			state[0] = self.round
+		else:
+			if self.last_location is not None:
+				state[self.last_location] = -1
+			state[self.active_index] = 1
+			self.last_location = self.active_index
 		return state
 
 	def reset(self):
@@ -60,8 +69,11 @@ class BasicEnv(gym.Env):
 		boolean
 			if the game is done
 		"""
-		reward = int(action == self.active_index)
-
+#		reward = int(action == self.active_index)
+		if self.super_simple:
+			reward = int(action == self.state[self.state_size - 1])
+		else:
+			reward = int(action == self.active_index)
 		self.round += 1
 		return self.state, reward, (self.round > self.timeout)
 

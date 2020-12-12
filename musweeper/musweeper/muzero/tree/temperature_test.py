@@ -12,8 +12,8 @@ class TestTemperature(unittest.TestCase):
         child_1.explored_count += 200
 
         assert type(temperature_softmax(root)) in [int, np.int64]
-        assert np.isclose(np.sum(create_distribution(root, 10)), 1)
-        assert np.isclose(np.sum(create_distribution(root, 50)), 1)
+        assert np.isclose(np.sum(create_distribution(root, 10)[0]), 1)
+        assert np.isclose(np.sum(create_distribution(root, 50)[0]), 1)
 
 if __name__ == "__main__":
     TestTemperature()

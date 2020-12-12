@@ -10,13 +10,14 @@ from musweeper.muzero.utils.basic_env import *
 from musweeper.muzero.utils.training_loop import *
 
 if __name__ == "__main__":
-	env = BasicEnv(state_size=2)
+	env = BasicEnv(state_size=2, super_simple=True)
 	representation, dynamics, prediction = create_model(env)
 	model = muzero(env, representation, dynamics,
-				   prediction, max_search_depth=2)
+				   prediction, max_search_depth=3)
 	optimizer = optim.Adam(model.parameters(), lr=0.01)#, weight_decay=0.01)
 
-	timer = clock(60 * 10)
+	timer = clock(60 * 15)
 	output = train(model, env, optimizer, timer_function=lambda: timer())
 	print(output)
 	model.save(optimizer)
+

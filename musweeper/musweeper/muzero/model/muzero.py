@@ -1,5 +1,6 @@
 from .mock import *
 from ..tree.monte_carlo import *
+from ..tree.naive_search import *
 from .components import *
 
 import operator
@@ -35,7 +36,7 @@ class muzero(nn.Module):
 	- dynamics -> returns next state and reward
 	- prediction
 	"""
-	def __init__(self, env, representation, dynamics, prediction, max_search_depth, add_exploration_noise=True):
+	def __init__(self, env, representation, dynamics, prediction, max_search_depth, add_exploration_noise=True, use_naive_search=False):
 		super(muzero, self).__init__()
 		self.action_size = prediction.policy.out_features if type(prediction) != mock_model else 2
 
@@ -45,7 +46,7 @@ class muzero(nn.Module):
 
 		self.max_search_depth = max_search_depth
 		self.tree = None
-		self.use_naive_search = False
+		self.use_naive_search = use_naive_search
 		self.add_exploration_noise = add_exploration_noise
 
 	def init_tree(self, state):
@@ -67,7 +68,10 @@ class muzero(nn.Module):
 		"""
 		self.init_tree(current_state)
 		self.tree.expand_node(self.tree.root, self)
-		return self.tree.root # list(self.tree.root.children.values())
+		return self.tree.root
+
+	def plan_action_naive(self, current_state):
+		return naive_search(self.representation(current_state)).search(self)
 
 	def update(self, state, action):
 		self.tree.update_root(state, action)

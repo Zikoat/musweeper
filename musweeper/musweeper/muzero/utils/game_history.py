@@ -9,11 +9,14 @@ class game_event_history:
 		self.event = namedtuple('event', ['reward', 'action', 'value', 'state'])
 		self.historic_reward = 0
 
-	def add(self, reward, action, value, state=None):
+	def add(self, reward, action, value, state=None, soft=False):
 		if type(reward) in [int, float] or (torch.is_tensor(reward)):
 			self.historic_reward += reward if not torch.is_tensor(reward) else reward.item()
-		self.history.append(self.event(reward, action, value, state))
-
+		event = self.event(reward, action, value, state)
+		if soft:
+			return event
+		self.history.append(event)
+	
 	@property
 	def length(self):
 		return len(self.history)

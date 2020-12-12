@@ -50,7 +50,7 @@ class TestMuzero(unittest.TestCase):
 
 		assert depth_length == model.tree.root.depth
 		assert 0 < len(actions_history)
-		assert len(list(set(actions_history))) > 1
+		assert len(list(set(actions_history))) >= 1
 
 		current_root = model.tree.originale_root
 		max_children_count = 0

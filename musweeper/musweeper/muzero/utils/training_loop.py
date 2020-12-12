@@ -7,6 +7,7 @@ from ..model.selfplay import play_game
 from .game_history import replay_buffer
 
 
+
 def scale_gradient(tensor, scale):
 	return tensor * scale + tensor.detach() * (1 - scale)
 
@@ -21,39 +22,42 @@ def loss_from_game(model, game_history, debug=False):
 	entire_loss = transform_input(torch.tensor(0, dtype=torch.float64))
 	K = model.max_search_depth
 	length = int(game_history.length)
+	full_game_history = list(game_history.history)
 	for t in range(length):
 		total_loss = transform_input(torch.tensor(0, dtype=torch.float64))
-		assert game_history.history[t].state is not None, "state should not be none {}".format(
-			game_history.history[t])
+		assert full_game_history[t].state is not None, "state should not be none {}".format(
+			full_game_history[t])
 
+		had_to_fill = False
 		if (t + K) < length:
 			for _ in range((t + K), length):	
-				game_history.add(
+				full_game_history.append(game_history.add(
 					reward = torch.tensor([0]),
 					action = np.random.randint(2),
 					value = 0,
 					state = None,
-				)
-	
-		predicted_rollout_game_history = model.get_rollout_path(game_history.history[t].state, [
-			game_history.history[tk].action for tk in range(min(t + K, game_history.length))
+					soft=True,
+				))
+			had_to_fill = True
+		predicted_rollout_game_history = model.get_rollout_path(full_game_history[t].state, [
+			full_game_history[tk].action for tk in range(min(t + K, game_history.length))
 		])
 		
 		assert predicted_rollout_game_history.length > 0, "zero output, something is wrong in the search tree"
 
 		for k in range(K):
 			predicted_reward = transform_input(predicted_rollout_game_history.history[k].reward.float())
-			actual_reward = transform_input(game_history.history[t + k].reward.float())
+			actual_reward = transform_input(full_game_history[t + k].reward.float())
 			actual_reward = (actual_reward[0] if actual_reward.dim() > 1 else actual_reward)
 
 			predicted_action = transform_input(
 				predicted_rollout_game_history.history[k].action)
 			actual_action = transform_input(
-				torch.tensor([game_history.history[t + k].action]))
+				torch.tensor([full_game_history[t + k].action]))
 
 			predicted_value = transform_input(torch.tensor([float(predicted_rollout_game_history.history[k].value)], dtype=torch.float64))
 			actual_value = transform_input(torch.tensor(
-				[float(game_history.history[t + k].value)], dtype=torch.float64))
+				[float(full_game_history[t + k].value)], dtype=torch.float64))
 
 			predicted_value = predicted_reward
 			actual_value = actual_reward
@@ -91,6 +95,8 @@ def loss_from_game(model, game_history, debug=False):
 		entire_loss += scale_gradient(total_loss, 1 / K)
 	#	print(entire_loss)
 		debug = False
+		if had_to_fill:
+			break
 #		model.reset()
 	return entire_loss
 

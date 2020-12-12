@@ -1,7 +1,7 @@
 import numpy as np
 
 def temperature_softmax(root, T=10):
-	output_softmax = create_distribution(root, T)
+	output_softmax, _ = create_distribution(root, T)
 	return get_action(output_softmax)
 
 def create_distribution(root, T):
@@ -10,7 +10,7 @@ def create_distribution(root, T):
 		node.explored_count for node in root.children.values()
 	]) ** 1 / (T + 1e-8)
 	output_softmax = softmax(children_count)
-	return output_softmax
+	return output_softmax, children_count
 
 def get_action(policy):
 	actions = np.arange(len(policy))

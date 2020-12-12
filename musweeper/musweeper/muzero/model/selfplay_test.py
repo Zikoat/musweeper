@@ -28,6 +28,15 @@ class TestSelfplay(unittest.TestCase):
 		for i in output.history:
 			assert i.value <= 1 and i.value >= 0
 
+	def test_use_naive_search(self):
+		env = BasicEnv()
+		representation, dynamics, prediction = create_model(env, testing=True)
+		max_search_depth = 3
+		model = muzero(env, representation, dynamics, prediction, max_search_depth=max_search_depth, use_naive_search=True)
+		output = play_game(model, env)
+		for i in output.history:
+			assert i.value <= 1 and i.value >= 0
+
 if __name__ == '__main__':
 	unittest.main()
 
