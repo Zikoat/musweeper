@@ -1,6 +1,7 @@
 from unittest import TestCase
 import gym
 import numpy as np
+import src.envs.minesweeper_assisted_env
 
 
 class TestMinesweeperAssistedEnv(TestCase):
@@ -47,7 +48,7 @@ class TestMinesweeperAssistedEnv(TestCase):
 
         # There shouldn't be a legal action that is known to be a mine
         self.assertFalse(np.any(
-            np.ravel(ob[1]).T[self.env.legal_actions()] == 1)
+            np.ravel(ob[1].T)[self.env.legal_actions()] == 1)
         )
 
         # There shouldn't be a legal action that is known to be safe

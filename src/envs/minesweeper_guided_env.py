@@ -30,6 +30,11 @@ class MinesweeperGuidedEnv(MinesweeperEnv):
         observation = self._get_guided_observation()
         return observation, *output
 
+    def reset(self):
+        super(MinesweeperGuidedEnv, self).reset()
+        observation = self._get_guided_observation()
+        return observation
+
     def _get_guided_observation(self):
         return np.array([(super()._get_observation()),
                          self.get_probability_matrix()])

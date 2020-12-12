@@ -130,6 +130,13 @@ class MinesweeperGuidedEnvTest(unittest.TestCase):
         np.testing.assert_array_equal(expected_probability_matrix,
                                       probability_matrix)
 
+    def test_reset(self):
+        reset_obs = self.env.reset()
+        step_obs, *step_other_state = self.env.step(self.env.action_space.sample())
+
+        self.assertEqual(reset_obs.shape, step_obs.shape)
+        self.assertEqual(reset_obs.size, step_obs.size)
+        self.assertEqual(type(reset_obs), type(step_obs))
 
 if __name__ == '__main__':
     unittest.main()
