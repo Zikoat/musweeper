@@ -55,6 +55,9 @@ def loss_from_game(model, game_history):
 			actual_value = transform_input(torch.tensor(
 				[float(game_history.history[t + k].value)], dtype=torch.float64))
 
+			predicted_value = predicted_reward
+			actual_value = actual_reward
+
 			assert 0 <= predicted_reward.item() and predicted_reward.item(
 			) <= 1, "reward should be in interval [0, 1] {}".format(predicted_reward)
 			assert 0 <= actual_reward.item() and actual_reward.item(

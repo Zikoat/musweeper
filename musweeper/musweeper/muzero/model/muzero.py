@@ -74,3 +74,17 @@ class muzero(nn.Module):
 	def think(self, state):
 		policy, _ = self.prediction(self.representation(state))
 		return torch.argmax(policy), policy
+
+	def predict_from_path(self, state, actions):
+		predictions = []
+		model_world = self.representation(state)
+		predictions.append(
+			self.prediction(model_world)
+		)
+		for a in actions:
+			model_world, _ = self.dynamics(model_world, a)
+			predictions.append(
+				self.prediction(model_world)
+			)
+		return predictions	
+

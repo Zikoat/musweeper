@@ -91,12 +91,15 @@ class monte_carlo_search_tree:
                 leaf node after search
         """
         relative_depth_level = 0
-        current_node = self.root if current_node is None else current_node
-        found_leaf = False
-        if self.add_exploration_noise:
-            current_node.add_exploration_noise()
-        while relative_depth_level < self.max_search_depth and not found_leaf:
-            current_node, found_leaf = self.select_best_node(current_node, model)
+        nodes_to_explore = 100
+        while relative_depth_level < nodes_to_explore:
+            current_node = self.root if current_node is None else current_node
+            if self.add_exploration_noise:
+                current_node.add_exploration_noise()
+
+            found_leaf = False
+            while not found_leaf:
+                current_node, found_leaf = self.select_best_node(current_node, model)
             relative_depth_level += 1
         return current_node
 
@@ -169,7 +172,6 @@ class monte_carlo_search_tree:
             leaf_node = leaf_node.parrent
 
         return value  # cumulative_discounted_reward
-
 
 
     def update_root(self, state, action):

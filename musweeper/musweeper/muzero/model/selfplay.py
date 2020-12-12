@@ -2,6 +2,7 @@ from ..utils.game_history import game_event_history
 import torch
 import numpy as np
 from ..model.components import transform_input
+from ..tree.temperture import *
 
 def play_game(model, env, self_play=False, custom_end_function=None, custom_reward_function=None, timeout_steps=100):
 	model.reset()
@@ -9,6 +10,7 @@ def play_game(model, env, self_play=False, custom_end_function=None, custom_rewa
 	game_history = game_event_history()
 	done = False
 	step = 0
+	temperature = 1
 	while not done and step < timeout_steps:
 		if self_play:
 			action, policy = model.think(observation)
@@ -27,9 +29,11 @@ def play_game(model, env, self_play=False, custom_end_function=None, custom_rewa
 #			state = torch.flatten(state) if state.dim() != 1 else state
 #			state = state.float()
 			output = model.plan_action(state)
-			best_node = max(output, key=lambda node: node.value)
-			best_value = model.tree.root.min_max_node_tracker.normalized(best_node.value)
-			best_action = best_node.node_id
+			best_action = temperature_softmax(model.tree.root, T=(temperature))
+			temperature *= 0.9
+#			best_node = max(output, key=lambda node: node.value)
+#			best_value = model.tree.root.min_max_node_tracker.normalized(best_node.value)
+#			best_action = best_node.node_id
 			model.prediction.debugger.stop_track_time("game play thinking")
 			
 			model.prediction.debugger.start_track_time("game play action")
@@ -42,7 +46,7 @@ def play_game(model, env, self_play=False, custom_end_function=None, custom_rewa
 			game_history.add(
 				reward=torch.tensor([reward]).reshape((1, -1)),
 				action=best_action,
-				value=best_value,
+				value=0,
 				state=state.reshape((1, -1))
 			)
 			model.update(None, best_action)
