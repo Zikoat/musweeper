@@ -31,7 +31,8 @@ class BasicEnv(gym.Env):
 		"""
 		state = torch.zeros((self.state_size))
 		if self.super_simple:
-			state = torch.randint(0, 1, (1, self.state_size))[0]
+			state = torch.randint(0, 2, (1, self.state_size))
+			state = state[0]
 			state[0] = self.round
 		else:
 			if self.last_location is not None:

@@ -47,6 +47,8 @@ def loss_from_game(model, game_history, debug=False):
 		assert predicted_rollout_game_history.length > 0, "zero output, something is wrong in the search tree"
 
 		for k in range(K):
+			if not (t + k) < len(full_game_history):
+				break
 			predicted_reward = transform_input(predicted_rollout_game_history.history[k].reward.float())
 			actual_reward = transform_input(full_game_history[t + k].reward.float())
 			actual_reward = (actual_reward[0] if actual_reward.dim() > 1 else actual_reward)

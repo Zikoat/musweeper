@@ -19,6 +19,8 @@ if __name__ == "__main__":
 				   prediction, max_search_depth=2)
 	optimizer = optim.Adam(model.parameters(), lr=0.01, weight_decay=0.01)
 
-	timer = clock(60)
-	output = train(model, env, optimizer, timer_function=lambda: timer(), custom_end_function=lambda env: env.unnecessary_steps > 0 or np.count_nonzero(np.logical_and(env.open_cells, env.mines)) > 0, custom_reward_function=lambda env, done: (np.count_nonzero(env.open_cells) * (1 - int(done))))
+	timer = clock(60 * 10)
+	# (np.count_nonzero(env.open_cells) *
+	output = train(model, env, optimizer, timer_function=lambda: timer(), custom_end_function=lambda env: env.unnecessary_steps > 0 or np.count_nonzero(np.logical_and(env.open_cells, env.mines)) > 0, custom_reward_function=lambda env, done: (1 - int(done)))
 	print(output)
+

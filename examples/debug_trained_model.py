@@ -15,7 +15,7 @@ def print_parameters():
         if param.requires_grad:
             print(name)#, param.data
 
-env = BasicEnv(state_size=4)
+env = BasicEnv(state_size=2)#, super_simple=True)
 
 representation, dynamics, prediction = create_model(env)
 model = muzero(env, representation, dynamics, prediction, max_search_depth=2)
@@ -23,20 +23,30 @@ optimizer = optim.Adam(model.parameters(), lr=0.01, weight_decay=0.01)
 
 model.load("../ignore/muzero", optimizer, cpu=True)
 
+state = env.reset()
+for _ in range(3):
+    print(state)
+    print(model.prediction(model.representation(state)))
+    distro = create_distribution(model.plan_action(state), T=1)
+    print(distro)
+    best_action = get_action(distro[0])
+    state, reward ,_ = env.step(best_action)
+    print(reward)
 
-print(model.prediction(model.representation(torch.tensor([1, 0, 0, 0]))))
-print(model.prediction(model.representation(torch.tensor([0, 1, 0, 0]))))
-print(model.dynamics(model.representation(torch.tensor([0, 1, 0, 0])), 0))
-print(model.dynamics(model.representation(torch.tensor([0, 1, 0, 0])), 1))
+"""
+print(model.prediction(model.representation(torch.tensor([1, 0, 0, 0])[:env.action_size])))
+print(model.prediction(model.representation(torch.tensor([0, 1, 0, 0])[:env.action_size])))
+print(model.dynamics(model.representation(torch.tensor([0, 1, 0, 0])[:env.action_size]), 0))
+print(model.dynamics(model.representation(torch.tensor([0, 1, 0, 0])[:env.action_size]), 1))
 
-print(temperature_softmax(model.plan_action(torch.tensor([0, 1, 0, 0]))))
-print(temperature_softmax(model.plan_action(torch.tensor([1, 0, 0, 0]))))
+print(temperature_softmax(model.plan_action(torch.tensor([0, 1, 0, 0])[:env.action_size])))
+print(temperature_softmax(model.plan_action(torch.tensor([1, 0, 0, 0])[:env.action_size])))
 
 model.reset()
-print(create_distribution(model.plan_action(torch.tensor([0, 1, 0, 0])), T=1))
+print(create_distribution(model.plan_action(torch.tensor([0, 1, 0, 0])[:env.action_size]), T=1))
 model.reset()
-print(create_distribution(model.plan_action(torch.tensor([1, 0, 0, 0])), T=1))
-
+print(create_distribution(model.plan_action(torch.tensor([1, 0, 0, 0])[:env.action_size]), T=1))
+"""
 
 #print(list(model.parameters()))
 #model.plan_action(torch.tensor([1, 0, 0, 0]))
