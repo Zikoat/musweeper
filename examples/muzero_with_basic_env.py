@@ -13,10 +13,10 @@ if __name__ == "__main__":
 	env = BasicEnv(state_size=2, super_simple=True)
 	representation, dynamics, prediction = create_model(env)
 	model = muzero(env, representation, dynamics,
-				   prediction, max_search_depth=3)
+				   prediction, max_search_depth=3, use_naive_search=True)
 	optimizer = optim.Adam(model.parameters(), lr=0.01)#, weight_decay=0.01)
 
-	timer = clock(60 * 15)
+	timer = clock(60 * 10)
 	output = train(model, env, optimizer, timer_function=lambda: timer())
 	print(output)
 	model.save(optimizer)

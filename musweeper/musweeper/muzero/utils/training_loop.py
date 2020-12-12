@@ -34,6 +34,7 @@ def loss_from_game(model, game_history, debug=False):
 				full_game_history.append(game_history.add(
 					reward = torch.tensor([0]),
 					action = np.random.randint(2),
+					policy = torch.zeros((model.action_size)),
 					value = 0,
 					state = None,
 					soft=True,
@@ -50,10 +51,12 @@ def loss_from_game(model, game_history, debug=False):
 			actual_reward = transform_input(full_game_history[t + k].reward.float())
 			actual_reward = (actual_reward[0] if actual_reward.dim() > 1 else actual_reward)
 
+			use_policy_loss = full_game_history[t + k].policy is not None 
 			predicted_action = transform_input(
-				predicted_rollout_game_history.history[k].action)
+				predicted_rollout_game_history.history[k].policy)
+			actual_action_input = full_game_history[t + k].action if not use_policy_loss else full_game_history[t + k].policy
 			actual_action = transform_input(
-				torch.tensor([full_game_history[t + k].action]))
+				torch.tensor([actual_action_input])) if not torch.is_tensor(actual_action_input) else transform_input(actual_action_input)
 
 			predicted_value = transform_input(torch.tensor([float(predicted_rollout_game_history.history[k].value)], dtype=torch.float64))
 			actual_value = transform_input(torch.tensor(
@@ -78,8 +81,11 @@ def loss_from_game(model, game_history, debug=False):
 			) <= 1, "value should be in interval [0, 1], got {}".format(actual_value)
 
 			loss_reward = loss_error(predicted_reward, actual_reward)
-			#loss_action = torch.sum(-actual_action * torch.log(predicted_action))
-			loss_action = loss_error_actions(predicted_action.reshape(1, -1), actual_action.long())
+			if use_policy_loss:
+				loss_action = torch.sum(-actual_action * torch.log(predicted_action))
+			else:
+				loss_action = loss_error_actions(predicted_action.reshape(1, -1), actual_action.long())
+			
 			loss_value = loss_error(predicted_value, actual_value)
 			if debug:
 				print("reward : {} ({}, {}), action : {}({}, {}), value: {}".format(loss_reward, predicted_reward, actual_reward, loss_action, predicted_action, actual_action, loss_value) )

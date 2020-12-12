@@ -93,7 +93,8 @@ class muzero(nn.Module):
 			#observation, reward, done = env.step(best_action)[:3]
 			policy, value = self.prediction(model_world)
 			game_history.add(
-				action=policy,
+				action=torch.argmax(policy).item(),
+				policy=policy,
 				reward=reward,
 				value=value,
 				state=None

@@ -8,7 +8,7 @@ from graphviz import Graph
 
 from ..utils.game_history import *
 from .node import *
-
+from .temperture import *
 
 class monte_carlo_search_tree:
     def __init__(self, root_state, max_search_depth, action_size=2, random_rollout_metric=None, top_k_nodes_to_search=5, add_exploration_noise=True):
@@ -258,3 +258,8 @@ class monte_carlo_search_tree:
         else:
             dot.render(file_name)
             return file_name + '.png'
+
+    def get_policy(self):
+        output_softmax, _ = create_distribution(self.root, T=1)
+        return torch.from_numpy(output_softmax)
+

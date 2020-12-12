@@ -6,13 +6,13 @@ import torch
 class game_event_history:
 	def __init__(self):
 		self.history = []
-		self.event = namedtuple('event', ['reward', 'action', 'value', 'state'])
+		self.event = namedtuple('event', ['reward', 'action', 'value', 'state', 'policy'])
 		self.historic_reward = 0
 
-	def add(self, reward, action, value, state=None, soft=False):
+	def add(self, reward, action, value, policy=None, state=None, soft=False):
 		if type(reward) in [int, float] or (torch.is_tensor(reward)):
 			self.historic_reward += reward if not torch.is_tensor(reward) else reward.item()
-		event = self.event(reward, action, value, state)
+		event = self.event(reward, action, value, state, policy)
 		if soft:
 			return event
 		self.history.append(event)

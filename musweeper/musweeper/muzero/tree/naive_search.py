@@ -10,8 +10,11 @@ class naive_search:
 
 	def search(self, model):
 		policy, _ = model.prediction(self.state)
-		print(policy.detach().numpy())
-		print(len(policy.detach().numpy()))
+		policy = policy.cpu() if policy.is_cuda else policy
+#		print(policy.detach().numpy())
+#		print(len(policy.detach().numpy()))
 		output_softmax = softmax(policy.detach().numpy())
+		if 1 < output_softmax.ndim:
+			output_softmax = output_softmax[0]
 		return get_action(output_softmax)
 

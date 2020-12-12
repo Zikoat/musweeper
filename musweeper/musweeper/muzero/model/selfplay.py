@@ -40,6 +40,7 @@ def play_game(model, env, self_play=False, custom_end_function=None, custom_rewa
 			game_history.add(
 				reward=torch.tensor([reward]).reshape((1, -1)),
 				action=best_action,
+				policy=None if model.use_naive_search else model.tree.get_policy(),
 				value=0,
 				state=state.reshape((1, -1))
 			)

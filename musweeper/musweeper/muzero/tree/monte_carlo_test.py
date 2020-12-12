@@ -171,14 +171,16 @@ class TestMonteCarlo(unittest.TestCase):
 
 		child = node(root)
 		child.node_id = 1
+		root.children[child.node_id] = child
 
 		top_k_nodes_to_search = 1
 		tree = monte_carlo_search_tree(None, max_search_depth=max_search_depth,
 									   top_k_nodes_to_search=top_k_nodes_to_search, random_rollout_metric=lambda tree, node: False)
+		tree.root = root
 		tree.set_values_for_expand_a_node(child, model)
 
-		assert len(root.children) == top_k_nodes_to_search
-
+#		assert len(root.children) == top_k_nodes_to_search
+		assert np.isclose(torch.sum(tree.get_policy()), 1)
 
 if __name__ == '__main__':
 	unittest.main()
