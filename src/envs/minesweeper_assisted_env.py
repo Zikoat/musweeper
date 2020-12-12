@@ -51,10 +51,3 @@ class MinesweeperAssistedEnv(MinesweeperGuidedEnv):
         for (x, y), cell_state in np.ndenumerate(board):
             if cell_state == -1 and probability_matrix[x, y] < self.EPSILON:
                 assert False
-
-
-register(
-    id='MinesweeperAssisted-v0',
-    entry_point='src.envs.minesweeper_assisted_env:MinesweeperAssistedEnv',
-    nondeterministic=False,
-)
