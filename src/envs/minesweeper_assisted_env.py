@@ -38,7 +38,7 @@ class MinesweeperAssistedEnv(MinesweeperGuidedEnv):
 
         reward = self._get_reward()
         done = self._is_done()
-        info = self._get_info(game_over_before, action)
+        info = self._get_info(action)
 
         self.assert_assisted_invariants(unnecessary_steps_before)
 

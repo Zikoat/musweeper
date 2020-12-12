@@ -38,7 +38,7 @@ class MinesweeperGuidedEnv(MinesweeperEnv):
         if not self.enable_guide or self._game_over():
             return np.empty((self.width, self.height))
 
-        ansi_board = self.get_ansi_board()
+        ansi_board = self.render("ansi")
         result = self.api_solve({
             "board": ansi_board,
             "total_mines": self.mines_count
@@ -57,9 +57,6 @@ class MinesweeperGuidedEnv(MinesweeperEnv):
 
         assert None not in matrix
         return matrix
-
-    def get_ansi_board(self):
-        return self.render("ansi")
 
     @staticmethod
     def api_solve(payload):
