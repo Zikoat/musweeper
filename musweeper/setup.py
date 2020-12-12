@@ -29,6 +29,7 @@ setuptools.setup(
         'graphviz',
         'line_profiler',
         'gym',
+        'tensorboard',
    #     f"gym_minesweeper @ git+https://github.com/Zikoat/gym-minesweeper#egg=gym_minesweeper"
     ]
 )

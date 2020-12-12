@@ -25,20 +25,16 @@ def play_game(model, env, self_play=False, custom_end_function=None, custom_rewa
 		else:
 			model.prediction.debugger.start_track_time("game play thinking")
 			state = transform_input(observation)
-#			state = state if not isinstance(state, np.ndarray) else torch.from_numpy(state)
-#			state = torch.flatten(state) if state.dim() != 1 else state
-#			state = state.float()
-			output = model.plan_action(state)
-			best_action = temperature_softmax(model.tree.root, T=(temperature))
+			best_action = temperature_softmax(model.plan_action(state), T=(temperature))
 			temperature *= 0.9
 #			best_node = max(output, key=lambda node: node.value)
 #			best_value = model.tree.root.min_max_node_tracker.normalized(best_node.value)
 #			best_action = best_node.node_id
-			model.prediction.debugger.stop_track_time("game play thinking")
+#			model.prediction.debugger.stop_track_time("game play thinking")
 			
-			model.prediction.debugger.start_track_time("game play action")
+#			model.prediction.debugger.start_track_time("game play action")
 			observation, reward, done = env.step(best_action)[:3]
-			model.prediction.debugger.stop_track_time("game play action")
+	#		model.prediction.debugger.stop_track_time("game play action")
 			if custom_end_function is not None:
 				done = custom_end_function(env)
 			if custom_reward_function is not None:
@@ -49,7 +45,10 @@ def play_game(model, env, self_play=False, custom_end_function=None, custom_rewa
 				value=0,
 				state=state.reshape((1, -1))
 			)
-			model.update(None, best_action)
+			model.prediction.debugger.variable_log["max_depth"] = model.tree.root.max_depth
+			model.prediction.debugger.variable_log["best_explored"] = model.tree.root.children[best_action].explored_count
+			model.reset()
+			#model.update(None, best_action)
 		step += 1
 	return game_history
 

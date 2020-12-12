@@ -4,6 +4,7 @@ import time
 
 import torch
 from graphviz import Digraph
+from graphviz import Graph
 
 from ..utils.game_history import *
 from .node import *
@@ -23,7 +24,7 @@ class monte_carlo_search_tree:
         # coin-flip
         self.random_rollout_metric = (lambda tree, node: random.randint(
             0, 2) == 1) if random_rollout_metric is None else random_rollout_metric
-        self.top_k_nodes_to_search = top_k_nodes_to_search
+        self.top_k_nodes_to_search = 1 #top_k_nodes_to_search
 
     def select_best_node(self, node, model):
         """
@@ -40,14 +41,14 @@ class monte_carlo_search_tree:
             best node
         """
         found_leaf = False
-        if len(node.children) == 0:
+        if len(node.children) == 0 :
             for action in range(self.children_count):
                 self.set_values_for_expand_a_node(node.create_node(action), model)
             found_leaf = True
         best_child_node = max(list(node.children.values()), key=lambda node: node.upper_confidence_boundary())
         return best_child_node, found_leaf
 
-    def expand_node(self, node, model, max_leaf_node_count=100):
+    def expand_node(self, node, model, max_leaf_node_count=25):
         """
         Expand node
 
@@ -65,16 +66,15 @@ class monte_carlo_search_tree:
         """
         if type(node) == int:
             node = self.root.create_children_if_not_exist(node)
-
-        if model and not node.has_init:
-            self.set_values_for_expand_a_node(node, model)
+        elif type(node) == type(None):
+            node = self.root
         
         leaf_node_count = 0
         while leaf_node_count < max_leaf_node_count:
             self.backpropgate(self.expand(node, model), start_depth=node.depth)
             leaf_node_count += 1
     
-    def expand(self, current_node=None, model=None):
+    def expand(self, input_node=None, model=None):
         """
         Expand the search tree
 
@@ -90,17 +90,16 @@ class monte_carlo_search_tree:
         node
                 leaf node after search
         """
-        relative_depth_level = 0
-        nodes_to_explore = 100
-        while relative_depth_level < nodes_to_explore:
-            current_node = self.root if current_node is None else current_node
-            if self.add_exploration_noise:
-                current_node.add_exploration_noise()
+        current_node = self.root if input_node is None else input_node
+        if self.add_exploration_noise:
+            current_node.add_exploration_noise()
 
-            found_leaf = False
-            while not found_leaf:
-                current_node, found_leaf = self.select_best_node(current_node, model)
-            relative_depth_level += 1
+        found_leaf = False
+        search_depth = 0
+        while not found_leaf and search_depth < 50:
+            current_node, found_leaf = self.select_best_node(current_node, model)
+            input_node.max_depth = max(input_node.max_depth, current_node.depth)
+            search_depth += 1
         return current_node
 
     def set_values_for_expand_a_node(self, new_node, model, is_child_node=False):
@@ -112,11 +111,10 @@ class monte_carlo_search_tree:
             state, action_tensor = hidden_state, torch.tensor([action]).float()
             next_state, reward = model.dynamics(state, action_tensor)
             policy, value_function = model.prediction(state)
-            new_node.on_node_creation(
-                next_state, reward, policy, value_function)
+            new_node.on_node_creation(next_state, reward, policy, value_function)
         else:
             next_state = new_node.hidden_state
-
+        """
         # create the child actions from the current node and assign a prior based on model output
         if not is_child_node:
             next_state_policy, _ = model.prediction(next_state)
@@ -131,6 +129,7 @@ class monte_carlo_search_tree:
                     parrent=new_node, node_id=action, hidden_state=None, prior=next_state_policy[action].item())
                 self.set_values_for_expand_a_node(
                     new_node.children[action], model, is_child_node=True)
+        """
 
     def backpropgate(self, leaf_node, start_depth, discount=0.1):
         """
@@ -163,14 +162,16 @@ class monte_carlo_search_tree:
                 int, float], "reward should be defined correctly {}".format(reward)
             discounted_reward = (discount ** (node_level_diff) * reward)
             discounted_value = leaf_value * discount ** visited_nodes
+
             # TODO : ASSUMING A 0 TO 1 REWARD
             assert 0 <= discounted_reward <= 1
             assert 0 <= discounted_value <= 1
             value += discounted_reward + discounted_value
 
+            if leaf_node.parrent is not None:
+                leaf_node.parrent.max_depth = max(leaf_node.parrent.max_depth, leaf_node.depth)
             leaf_node.cumulative_discounted_reward = cumulative_discounted_reward
             leaf_node = leaf_node.parrent
-
         return value  # cumulative_discounted_reward
 
 
@@ -228,13 +229,14 @@ class monte_carlo_search_tree:
             score = node.score_metric()
             parrent_action = node.parrent.node_id if node.parrent is not None else "seed"
 
-            node_id = '{depth}_{parrent_action}_{action}_{state}'.format(
-                depth=depth, parrent_action=parrent_action, action=action, state=state)
+            node_id = '{depth}_{parrent_action}_{action}_{id}'.format(
+                depth=depth, parrent_action=parrent_action, action=action, id=node.random_id)
             if create:
                 ucb = node.upper_confidence_boundary()
                 ucb_reason = node.ucb_score_parts
-                dot.node(node_id, 'depth {depth}, action {action}, score {score}, env state: {state}, ucb = {ucb}, ucb_reason = {ucb_reason}'.format(
-                    depth=depth, action=action, score=score, state=state, ucb=ucb, ucb_reason=ucb_reason), color='black' if state is None else 'green')
+                random_id = node.random_id
+                dot.node(node_id, 'depth {depth}, action {action}, score {score}, env state: {state}, ucb = {ucb}, ucb_reason = {ucb_reason}, #{id}'.format(
+                    depth=depth, action=action, score=score, state=state, ucb=ucb, ucb_reason=ucb_reason, id=random_id), color='black' if state is None else 'green')
             return node_id
 
         for child_nodes in node.children.values():
@@ -247,10 +249,10 @@ class monte_carlo_search_tree:
             generated_current_root = create_node(node, create=True)
             dot.edge(generated_current_root, create_node(child_nodes))
 
-    def draw(self, show_only_used_edges=False, view_only=False):
-        dot = Digraph(comment='The search tree', format='png')
+    def draw(self, show_only_used_edges=False, view_only=False, file_name=None):
+        dot = Graph(comment='The search tree')#, engine='neato', format='png', graph_attr=dict(nodesep='12', edgesep="10", concentrate="true", overlap="scale"))
         self.construct_tree(dot, self.originale_root, show_only_used_edges)
-        file_name = 'search-tree_{time}'.format(time=time.time())
+        file_name = 'search-tree_{time}'.format(time=time.time()) if file_name is None else file_name
         if view_only:
             dot.view(tempfile.mktemp('.gv'))
         else:

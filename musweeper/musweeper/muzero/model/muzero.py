@@ -48,6 +48,16 @@ class muzero(nn.Module):
 		self.use_naive_search = False
 		self.add_exploration_noise = add_exploration_noise
 
+	def init_tree(self, state):
+		if self.tree is None:
+			internal_muzero_state = self.representation(state)
+			self.tree = monte_carlo_search_tree(internal_muzero_state, self.max_search_depth, action_size=self.action_size, add_exploration_noise=self.add_exploration_noise)
+			self.tree.root.environment_state = state
+			self.tree.select_best_node(self.tree.root, self)
+		else:
+			return None
+		return self.tree
+
 	def plan_action(self, current_state):
 		"""
 		at each state the model will do a roll out with the monte carlo tree and the learned model
@@ -55,15 +65,9 @@ class muzero(nn.Module):
 		2 - Then we use monte carlo tree search based on this new state
 		3 - When we find a leaf node / episode is over, we store the path in a replay buffer (used for training)
 		"""
-		internal_muzero_state = self.representation(current_state)
-		if self.tree is None:
-			self.tree = monte_carlo_search_tree(internal_muzero_state, self.max_search_depth, action_size=self.action_size, add_exploration_noise=self.add_exploration_noise)
-			self.tree.root.environment_state = current_state
-
-		# loop over all possible actions from current node
-		for action in range(self.action_size):
-			self.tree.expand_node(action, self)
-		return list(self.tree.root.children.values())
+		self.init_tree(current_state)
+		self.tree.expand_node(self.tree.root, self)
+		return self.tree.root # list(self.tree.root.children.values())
 
 	def update(self, state, action):
 		self.tree.update_root(state, action)
@@ -88,3 +92,17 @@ class muzero(nn.Module):
 			)
 		return predictions	
 
+	def save(self, optimizer):
+		torch.save({
+            'model_state_dict': self.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+        }, 'muzero')
+
+	def load(self, path, optimizer, cpu=False):
+		if cpu:
+			checkpoint = torch.load(path, map_location=torch.device('cpu'))
+		else:
+			checkpoint = torch.load(path)
+		self.load_state_dict(checkpoint['model_state_dict'])
+		optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+		return self

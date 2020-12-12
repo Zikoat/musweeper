@@ -50,8 +50,7 @@ class TestMonteCarlo(unittest.TestCase):
 			None, max_search_depth=max_search_depth, random_rollout_metric=lambda tree, node: False)
 		tree.root = root
 
-		final_expanded_node = tree.expand(root, self.model)
-
+		tree.expand(root, self.model)
 		assert len(root.children.values()) > 0
 		assert 0 == tree.root.upper_confidence_boundary()
 		assert root == tree.root
@@ -59,7 +58,9 @@ class TestMonteCarlo(unittest.TestCase):
 		tree.update_root(None, tree.root.get_best_action())
 
 		assert (root.depth + 1) == tree.root.depth
-		assert len(tree.root.children) > 0
+		# since we break on first leaf node, there should be no children on new root
+		assert len(tree.root.children) == 0
+		assert root.max_depth > 0
 
 	def test_monte_carlo_backpropgate(self):
 		"""
@@ -88,6 +89,7 @@ class TestMonteCarlo(unittest.TestCase):
 			final_expanded_node, start_depth=0, discount=1)
 		for child_nodes in root.children.values():
 			assert 0 < child_nodes.upper_confidence_boundary()
+		assert root.max_depth > 0
 
 	# skipped for now as the functionality is changed
 	def that_node_values_propgate_correctly_with_model(self):

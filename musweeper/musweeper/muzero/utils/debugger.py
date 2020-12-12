@@ -1,5 +1,5 @@
 import time
-
+from torch.utils.tensorboard import SummaryWriter
 
 def singleton(cls):
 	obj = cls()
@@ -35,6 +35,24 @@ class model_debugger:
 		self.called_times = {
 
 		}
+		self.variable_log = {
+
+		}
+		self.tenserboard_writer = SummaryWriter()
+		self.epoch_write_counter = {
+
+		}
+	
+	def write_to_tensorboard(self, name, value, epoch):
+		if epoch is None:
+			if name not in self.epoch_write_counter:
+				self.epoch_write_counter[name] = 0
+			epoch = self.epoch_write_counter[name]
+			self.epoch_write_counter[name] += 1
+		self.tenserboard_writer.add_scalar(name, value, epoch)
+	
+	def save_tensorboard(self):
+		self.tenserboard_writer.writer.close()
 
 	def get_last_round(self):
 		"""

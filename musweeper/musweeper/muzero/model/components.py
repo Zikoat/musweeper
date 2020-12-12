@@ -109,7 +109,7 @@ class component_predictions(nn.Module, shared_backbone):
 		torch.tensor
 			the value function
 		"""
-		if len(state.shape) == 1:
+		if state.dim() == 1:
 			state = state.reshape((1, -1))
 		self.debugger.start_track_time("predictions")
 		self.debugger.start_forward("predictions")

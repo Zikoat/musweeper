@@ -15,12 +15,13 @@ class TestMuzero(unittest.TestCase):
 		max_search_depth = 3
 		model = muzero(env, representation, dynamics, prediction, max_search_depth=max_search_depth)
 
-		tree_paths = model.plan_action(env.state)
+		tree_paths = model.plan_action(env.state).children.values()
 		assert len(tree_paths) == 2
 		for paths in tree_paths:
 			assert paths.depth == 1
 			assert torch.is_tensor(paths.reward)
 			assert torch.is_tensor(paths.hidden_state)
+		assert model.tree.root.max_depth > 0
 
 	def test_should_construct_tree_in_correct_order(self):
 		env = BasicEnv()
@@ -34,9 +35,11 @@ class TestMuzero(unittest.TestCase):
 
 		]
 		while not done:
-			output = model.plan_action(env.state)
+			output = model.plan_action(env.state).children.values()
 			best_node = max(output, key=lambda node: node.score_metric())
 			assert best_node.depth == len(actions_history) + 1
+			assert sum(list(set([node.max_depth for node in output]))) > 0
+#			assert model.tree.root.max_depth > 0
 			# both children should have a value 
 			assert best_node.upper_confidence_boundary() < sum([i.upper_confidence_boundary() for i in output])
 			best_action = best_node.node_id

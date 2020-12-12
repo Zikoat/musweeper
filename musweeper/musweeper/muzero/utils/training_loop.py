@@ -10,7 +10,7 @@ def scale_gradient(tensor, scale):
 	return tensor * scale + tensor.detach() * (1 - scale)
 
 
-def loss_from_game(model, game_history):
+def loss_from_game(model, game_history, debug=False):
 	"""
 	The loss tries to make the model reason about the future based on the past
 	"""
@@ -38,12 +38,9 @@ def loss_from_game(model, game_history):
 		for k in range(rollout_length):
 			if not (t + k) < game_history.length:
 				break
-			predicted_reward = transform_input(
-				predicted_rollout_game_history.history[k].reward.float()) / size
-			actual_reward = transform_input(
-				game_history.history[t + k].reward.float())
-			actual_reward = (
-				actual_reward[0] if actual_reward.dim() > 1 else actual_reward) / size
+			predicted_reward = transform_input(predicted_rollout_game_history.history[k].reward.float())
+			actual_reward = transform_input(game_history.history[t + k].reward.float())
+			actual_reward = (actual_reward[0] if actual_reward.dim() > 1 else actual_reward)
 
 			predicted_action = transform_input(
 				predicted_rollout_game_history.history[k].action)
@@ -73,9 +70,22 @@ def loss_from_game(model, game_history):
 			assert 0 <= actual_value.item() and actual_value.item(
 			) <= 1, "value should be in interval [0, 1], got {}".format(actual_value)
 
-			total_loss += loss_error(predicted_reward, actual_reward) + loss_error_actions(
-				predicted_action.reshape(1, -1), actual_action.long()) + loss_error(predicted_value, actual_value)
+			loss_reward = loss_error(predicted_reward, actual_reward)
+			loss_action = loss_error_actions(predicted_action.reshape(1, -1), actual_action.long())
+			loss_value = loss_error(predicted_value, actual_value)
+			if debug:
+				print("reward : {} ({}, {}), action : {}({}, {}), value: {}".format(loss_reward, predicted_reward, actual_reward, loss_action, predicted_action, actual_action, loss_value) )
+
+			model.prediction.debugger.write_to_tensorboard("predicted_reward", predicted_reward.item(), None)
+			model.prediction.debugger.write_to_tensorboard("actual_reward", actual_reward.item(), None)
+
+			model.prediction.debugger.write_to_tensorboard("reward_loss", loss_reward, None)
+			model.prediction.debugger.write_to_tensorboard("action_loss", loss_action, None)
+			model.prediction.debugger.write_to_tensorboard("action_value", loss_value, None)
+
+			total_loss += loss_reward + loss_action + loss_value
 		entire_loss += scale_gradient(total_loss, 1 / rollout_length)
+		debug = False
 	return entire_loss
 
 
@@ -84,10 +94,14 @@ def train(model, env, optimizer, timer_function, log=False, print_interval=15, u
 
 	i = 0
 	game_score = []
+	last_loss = None
 	while not timer_function():
-		if 0 < i and i % print_interval == 0:
-			print('%d: min=%.2f median=%.2f max=%.2f eval=%.2f, sum of %d last games=%.2f' % (i, min(game_score), game_score[len(
-				game_score)//2], max(game_score), sum(game_score)/len(game_score), print_interval, sum(game_score[-print_interval:])))
+		print_debug = 0 < i and i % print_interval == 0
+		if print_debug:
+			tree_depth = model.prediction.debugger.variable_log.get("max_depth", None)
+			best_explored = model.prediction.debugger.variable_log.get("best_explored", None)
+			print('%d: min=%.2f median=%.2f max=%.2f eval=%.2f, sum of %d last games=%.2f, loss=%s, depth=%s, explored=%s' % (i, min(game_score), game_score[len(
+				game_score)//2], max(game_score), sum(game_score)/len(game_score), print_interval, sum(game_score[-print_interval:]), last_loss, tree_depth, best_explored))
 
 		last_game = play_game(model, env, custom_end_function=custom_end_function, custom_reward_function=custom_reward_function)
 		game_replay_buffer.add(last_game)
@@ -95,9 +109,12 @@ def train(model, env, optimizer, timer_function, log=False, print_interval=15, u
 			optimizer.zero_grad()
 			total_loss = transform_input(torch.tensor(0, dtype=torch.float64))
 			for game in game_replay_buffer.get_batch():
-				total_loss += loss_from_game(model, game)
+				total_loss += loss_from_game(model, game, debug=print_debug)
 			total_loss.backward()
+			last_loss = total_loss.item()
 			optimizer.step()
+			model.prediction.debugger.write_to_tensorboard("loss", last_loss, i)
+		model.prediction.debugger.write_to_tensorboard("game", last_game.historic_reward, i)
 		game_score.append(last_game.historic_reward)
 		i += 1
 	return game_score

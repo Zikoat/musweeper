@@ -81,12 +81,14 @@ class node:
         self.environment_state = None
 
         self.depth = 0 if parrent is None else (parrent.depth + 1)
+        self.max_depth = self.depth
 
         self.available_children_paths = None
         self.score_metric = self.upper_confidence_boundary
         self.ucb_score_parts = [
 
         ]
+        self.random_id = str(np.random.rand())
 
     def add_exploration_noise(self):
         """
