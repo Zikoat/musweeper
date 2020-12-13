@@ -25,8 +25,17 @@ class monte_carlo_search_tree:
         self.random_rollout_metric = (lambda tree, node: random.randint(
             0, 2) == 1) if random_rollout_metric is None else random_rollout_metric
         self.top_k_nodes_to_search = 1 #top_k_nodes_to_search
+        self.legal_actions = None
 
-    def select_best_node(self, node, model):
+    def set_legal_actions(self, legal_actions):
+        self.legal_actions = legal_actions
+
+    def is_action_legal(self, action):
+        if self.legal_actions is None:
+            return True
+        return action in self.legal_actions
+
+    def select_best_node(self, node, model, is_root=False):
         """
         Select best child node
 
@@ -43,6 +52,8 @@ class monte_carlo_search_tree:
         found_leaf = False
         if len(node.children) == 0 :
             for action in range(self.children_count):
+                if is_root and not self.is_action_legal(action):
+                    continue
                 self.set_values_for_expand_a_node(node.create_node(action), model)
             found_leaf = True
         best_child_node = max(list(node.children.values()), key=lambda node: node.upper_confidence_boundary())
@@ -91,13 +102,14 @@ class monte_carlo_search_tree:
                 leaf node after search
         """
         current_node = self.root if input_node is None else input_node
+        current_node.disable_illegal_actions(self.legal_actions)
         if self.add_exploration_noise:
             current_node.add_exploration_noise()
 
         found_leaf = False
         search_depth = 0
         while not found_leaf and search_depth < 50:
-            current_node, found_leaf = self.select_best_node(current_node, model)
+            current_node, found_leaf = self.select_best_node(current_node, model, is_root=(search_depth == 0))
             input_node.max_depth = max(input_node.max_depth, current_node.depth)
             search_depth += 1
         return current_node
@@ -260,6 +272,6 @@ class monte_carlo_search_tree:
             return file_name + '.png'
 
     def get_policy(self):
-        output_softmax, _ = create_distribution(self.root, T=1)
+        output_softmax, _ = create_distribution(self.root, size=self.children_count, T=1)
         return torch.from_numpy(output_softmax)
 

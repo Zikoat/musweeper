@@ -15,5 +15,12 @@ class TestTemperature(unittest.TestCase):
         assert np.isclose(np.sum(create_distribution(root, 10)[0]), 1)
         assert np.isclose(np.sum(create_distribution(root, 50)[0]), 1)
 
+        del root.children[0]
+        output, _ = create_distribution(root, T=1, size=2)
+        assert np.isclose(np.sum(output), 1)
+        assert np.isclose(output[0], 0)
+        assert np.isclose(output[1], 1)
+        assert get_action(output) == 1
+
 if __name__ == "__main__":
     TestTemperature()

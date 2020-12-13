@@ -23,6 +23,18 @@ class TestMuzero(unittest.TestCase):
 			assert torch.is_tensor(paths.hidden_state)
 		assert model.tree.root.max_depth > 0
 
+	def test_plan_action_leagal_actions(self):
+		env = BasicEnv()
+		representation, dynamics, prediction = create_model(env, testing=True)
+		max_search_depth = 3
+		model = muzero(env, representation, dynamics, prediction, max_search_depth=max_search_depth)
+
+		tree_paths = list(model.plan_action(env.state, [ 0 ]).children.values())
+		assert len(tree_paths) == 1
+		assert tree_paths[0].node_id == 1
+		assert len(tree_paths[0].children) == 2
+		assert model.tree.root.max_depth > 0
+
 	def test_should_construct_tree_in_correct_order(self):
 		env = BasicEnv()
 		representation, dynamics, prediction = create_model(env, testing=True)

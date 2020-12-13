@@ -21,6 +21,7 @@ if __name__ == "__main__":
 
 	timer = clock(60 * 10)
 	# (np.count_nonzero(env.open_cells) *
-	output = train(model, env, optimizer, timer_function=lambda: timer(), custom_end_function=lambda env: env.unnecessary_steps > 0 or np.count_nonzero(np.logical_and(env.open_cells, env.mines)) > 0, custom_reward_function=lambda env, done: (1 - int(done)))
+#	output = train(model, env, optimizer, timer_function=lambda: timer(), custom_end_function=lambda env: env.unnecessary_steps > 0 or np.count_nonzero(np.logical_and(env.open_cells, env.mines)) > 0, custom_reward_function=lambda env, done: (1 - int(done)))
+	output = train(model, env, optimizer, timer_function=lambda: timer(), custom_end_function=lambda env: env.unnecessary_steps > 0 or np.count_nonzero(np.logical_and(env.open_cells, env.mines)) > 0)#, custom_reward_function=lambda env, done: (1 - int(done)))
 	print(output)
-
+	model.save(optimizer)

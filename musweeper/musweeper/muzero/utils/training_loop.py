@@ -139,6 +139,7 @@ def train(model, env, optimizer, timer_function, log=False, print_interval=15, u
 				optimizer.step()
 				model.prediction.debugger.write_to_tensorboard("loss", last_loss, None)
 		model.prediction.debugger.write_to_tensorboard("game", last_game.historic_reward, i)
+		model.prediction.debugger.write_to_tensorboard("game_length", last_game.length, i)
 		game_score.append(last_game.historic_reward)
 		i += 1
 	return game_score

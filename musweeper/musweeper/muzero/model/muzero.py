@@ -59,7 +59,7 @@ class muzero(nn.Module):
 			return None
 		return self.tree
 
-	def plan_action(self, current_state):
+	def plan_action(self, current_state, legal_actions=None):
 		"""
 		at each state the model will do a roll out with the monte carlo tree and the learned model
 		1 - We choose a candidate action (we will loop over all possbile actions)
@@ -67,6 +67,7 @@ class muzero(nn.Module):
 		3 - When we find a leaf node / episode is over, we store the path in a replay buffer (used for training)
 		"""
 		self.init_tree(current_state)
+		self.tree.set_legal_actions(legal_actions)
 		self.tree.expand_node(self.tree.root, self)
 		return self.tree.root
 
