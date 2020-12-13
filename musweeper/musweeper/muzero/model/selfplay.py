@@ -29,9 +29,9 @@ def play_game(model, env, self_play=False, custom_end_function=None, custom_rewa
 			if model.use_naive_search:
 				best_action = model.plan_action_naive(state)
 			else:
-#				legal_actions = getattr(env, "legal_actions", None)
-#				legal_actions = legal_actions() if legal_actions is not None else None
-				legal_actions = None
+				legal_actions = getattr(env, "legal_actions", None)
+				legal_actions = legal_actions() if legal_actions is not None else None
+#				legal_actions = None
 				best_action = temperature_softmax(model.plan_action(state, legal_actions), T=(temperature), size=model.action_size)
 				temperature *= 0.9
 			observation, reward, done = env.step(best_action)[:3]
@@ -45,7 +45,7 @@ def play_game(model, env, self_play=False, custom_end_function=None, custom_rewa
 				action=best_action,
 				policy=None if model.use_naive_search else model.tree.get_policy(),
 				value=0,
-				state=state.reshape((1, -1))
+				state=state,#.reshape((1, -1))
 			)
 			#if not model.use_naive_search:
 			#	model.prediction.debugger.variable_log["max_depth"] = model.tree.root.max_depth

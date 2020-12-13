@@ -23,7 +23,7 @@ def create_model(env, testing=False, config={}):
 		env_size = env.state_size if not hasattr(env, 'observation_space') or env.observation_space is None else env.observation_space.shape
 		env_size = env_size if type(env_size) in [int, float] else prod(env_size)
 
-		dynamics = component_dynamics(representation_size)
+		dynamics = component_dynamics(representation_size, action_size)
 		prediction = component_predictions(representation_size, action_size)
 		representation = component_representation(env_size, representation_size)
 		return representation, dynamics, prediction
