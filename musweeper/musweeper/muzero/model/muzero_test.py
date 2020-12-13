@@ -31,8 +31,16 @@ class TestMuzero(unittest.TestCase):
 
 		tree_paths = list(model.plan_action(env.state, [ 0 ]).children.values())
 		assert len(tree_paths) == 1
+		assert tree_paths[0].node_id == 0
+		assert len(tree_paths[0].children) == 2
+		assert model.tree.root.max_depth > 0
+
+		model.reset()
+		tree_paths = list(model.plan_action(env.state, [ 1 ]).children.values())
+		assert len(tree_paths) == 1
 		assert tree_paths[0].node_id == 1
 		assert len(tree_paths[0].children) == 2
+		assert len(tree_paths[0].children[0].children) == 2
 		assert model.tree.root.max_depth > 0
 
 	def test_should_construct_tree_in_correct_order(self):

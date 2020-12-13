@@ -103,13 +103,12 @@ class node:
                 (1 - root_exploration_fraction) + \
                 noise * root_exploration_fraction
 
-    def disable_illegal_actions(self, illegal_actions):
-        if illegal_actions is None:
-            return []
+    def disable_illegal_actions(self, legal_actions):
+        if legal_actions is None:
+            return None
         # we just delete the illegal actions from the node
-        for i in illegal_actions:
-            action = i.item() if type(i) != int else i
-            if action in self.children:
+        for action in list(self.children.keys()):
+            if action not in legal_actions:
                 del self.children[action]
 
     def search_value_exploration_exploration(self):

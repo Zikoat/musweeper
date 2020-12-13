@@ -29,9 +29,9 @@ def play_game(model, env, self_play=False, custom_end_function=None, custom_rewa
 			if model.use_naive_search:
 				best_action = model.plan_action_naive(state)
 			else:
-				legal_actions = getattr(env, "legal_actions", None)
-				legal_actions = legal_actions() if legal_actions is not None else None
-#				legal_actions = None
+#				legal_actions = getattr(env, "legal_actions", None)
+#				legal_actions = legal_actions() if legal_actions is not None else None
+				legal_actions = None
 				best_action = temperature_softmax(model.plan_action(state, legal_actions), T=(temperature), size=model.action_size)
 				temperature *= 0.9
 			observation, reward, done = env.step(best_action)[:3]
@@ -80,4 +80,3 @@ def selfplay_single_player(model, env, games=10):
 			for event in game.history:
 				loss += (sign * event.action).sum()
 	return loss
-	
