@@ -36,7 +36,7 @@ while not done:
 #    print(distro)
     best_action = get_action(distro)
     state, reward, done = env.step(best_action)[:3]
-    print(best_action, reward, done)
+    print(best_action, reward, done, env._parse_action(best_action))
     if done:
         print(env.render("ansi"))
 #        print(state)
