@@ -120,7 +120,7 @@ class monte_carlo_search_tree:
         action = new_node.node_id
 
         if not new_node.has_init:
-            state, action_tensor = hidden_state, torch.tensor([action]).float()
+            state, action_tensor = hidden_state, action
             next_state, reward = model.dynamics(state, action_tensor)
             policy, value_function = model.prediction(state)
             new_node.on_node_creation(next_state, reward, policy, value_function)

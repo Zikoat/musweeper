@@ -44,14 +44,10 @@ def play_game(model, env, self_play=False, custom_end_function=None, custom_rewa
 				reward=torch.tensor([reward]).reshape((1, -1)),
 				action=best_action,
 				policy=None if model.use_naive_search else model.tree.get_policy(),
-				value=0,
-				state=state,#.reshape((1, -1))
+				value=torch.tensor([1]).reshape((1, -1)) if not done else torch.tensor([0]).reshape((1, -1)),
+				state=state,
 			)
-			#if not model.use_naive_search:
-			#	model.prediction.debugger.variable_log["max_depth"] = model.tree.root.max_depth
-			#	model.prediction.debugger.variable_log["best_explored"] = model.tree.root.children[best_action].explored_count
 			model.reset()
-			#model.update(None, best_action)
 		step += 1
 	return game_history
 

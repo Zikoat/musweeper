@@ -14,6 +14,11 @@ def transform_input(tensor):
 		return tensor.to(dtype=torch.float32).cuda()
 	return tensor.to(dtype=torch.float32)
 
+def convert_to_one_hot(action, action_size):
+	one_hot_action = torch.zeros((1, action_size))
+	one_hot_action[0][action] = 1
+	return one_hot_action
+
 class shared_backbone:
 	def __init__(self):
 		self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -80,15 +85,16 @@ class component_dynamics(nn.Module, shared_backbone):
 			state = state.reshape((1, -1))
 
 		if type(action) == int:
-			action = torch.tensor([action])
+			action = convert_to_one_hot(action, self.action_size)
+			#torch.tensor([action])
 
 		if len(action.shape) == 1:
 			action = action.reshape((1, -1))
-		
-		one_hot_action = torch.zeros((1, self.action_size))
-		one_hot_action[action.item()] = 1
 
-		action = one_hot_action
+		assert action.shape[-1] == self.action_size, "should be one hot {}".format(action)
+#		one_hot_action = torch.zeros((1, self.action_size))
+#		one_hot_action[action.item()] = 1
+#		action = one_hot_action
 
 		state = transform_input(state)
 		action = transform_input(action)

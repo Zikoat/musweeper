@@ -116,3 +116,10 @@ class muzero(nn.Module):
 		self.load_state_dict(checkpoint['model_state_dict'])
 		optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 		return self
+
+	def act(self, state, env):
+		legal_actions = getattr(env, "legal_actions", None)
+		legal_actions = legal_actions() if legal_actions is not None else None
+		best_action = temperature_softmax(self.plan_action(state, legal_actions), T=1, size=self.action_size)
+		return best_action
+	

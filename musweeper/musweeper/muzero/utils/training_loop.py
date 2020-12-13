@@ -64,8 +64,8 @@ def loss_from_game(model, game_history, debug=False):
 			actual_value = transform_input(torch.tensor(
 				[float(full_game_history[t + k].value)], dtype=torch.float64))
 
-			predicted_value = predicted_reward
-			actual_value = actual_reward
+		#	predicted_value = predicted_reward
+		#	actual_value = actual_reward
 
 			assert 0 <= predicted_reward.item() and predicted_reward.item(
 			) <= 1, "reward should be in interval [0, 1] {}".format(predicted_reward)
@@ -95,9 +95,12 @@ def loss_from_game(model, game_history, debug=False):
 			model.prediction.debugger.write_to_tensorboard("predicted_reward", predicted_reward.item(), None)
 			model.prediction.debugger.write_to_tensorboard("actual_reward", actual_reward.item(), None)
 
+			model.prediction.debugger.write_to_tensorboard("predicted_value", predicted_value.item(), None)
+			model.prediction.debugger.write_to_tensorboard("actual_value", actual_value.item(), None)
+
 			model.prediction.debugger.write_to_tensorboard("reward_loss", loss_reward, None)
 			model.prediction.debugger.write_to_tensorboard("action_loss", loss_action, None)
-			model.prediction.debugger.write_to_tensorboard("action_value", loss_value, None)
+			model.prediction.debugger.write_to_tensorboard("value_loss", loss_value, None)
 
 			total_loss += loss_reward + loss_action + loss_value
 		entire_loss += scale_gradient(total_loss, 1 / K)
