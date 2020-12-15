@@ -1,0 +1,30 @@
+// The search tree
+digraph {
+	"1_None_1_None" [label="depth 1, action 1, score 2.4620333426127865, env state: None, ucb = 2.4620333426127865, ucb_reason = [1.4565974175930023, 1.6085665225982666, 1, 1.0, 2, 19654, 19652, 0.6250508828169167]" color=black]
+	"2_1_0_None" [label="depth 2, action 0, score 2.0386675669373293, env state: None, ucb = 2.0386675669373293, ucb_reason = [0.454299658536911, 1.2673911452297675, 1, 1.0, 1, 19654, 19652, 1.2501017656338334]" color=black]
+	"1_None_1_None" -> "2_1_0_None"
+	"3_1_0_None" [label="depth 3, action 0, score 2.5667900540463457, env state: None, ucb = 2.5667900540463457, ucb_reason = [0.454299658536911, 1.6898547410964966, 1, 1.0, 1, 19654, 19652, 1.2501017656338334]" color=black]
+	"4_0_0_None" [label="depth 4, action 0, score 0.45430001616477966, env state: None, ucb = 0.45430001616477966, ucb_reason = [0.45430001616477966, 1.6898550987243652, 0, 0.0, 1, 19653, 19652, 0.0]" color=black]
+	"3_1_0_None" -> "4_0_0_None"
+	"3_1_0_None" [label="depth 3, action 0, score 2.5667900540463457, env state: None, ucb = 2.5667900540463457, ucb_reason = [0.454299658536911, 1.6898547410964966, 1, 1.0, 1, 19654, 19652, 1.2501017656338334]" color=black]
+	"4_0_1_None" [label="depth 4, action 1, score 0.45681384205818176, env state: None, ucb = 0.45681384205818176, ucb_reason = [0.45681384205818176, 1.608588457107544, 0, 0.0, 1, 19653, 19652, 0.0]" color=black]
+	"3_1_0_None" -> "4_0_1_None"
+	"2_1_1_None" [label="depth 2, action 1, score 2.3273348281799633, env state: None, ucb = 2.3273348281799633, ucb_reason = [1.4169846575372578, 1.4564417004580985, 1, 1.0, 2, 19654, 19652, 0.6250508828169167]" color=black]
+	"3_1_0_None" [label="depth 3, action 0, score 2.5667900540463457, env state: None, ucb = 2.5667900540463457, ucb_reason = [0.454299658536911, 1.6898547410964966, 1, 1.0, 1, 19654, 19652, 1.2501017656338334]" color=black]
+	"2_1_1_None" -> "3_1_0_None"
+	"3_1_1_None" [label="depth 3, action 1, score 2.3733717723193073, env state: None, ucb = 2.3733717723193073, ucb_reason = [1.3679218390676484, 1.6085889339447021, 1, 1.0, 2, 19654, 19652, 0.6250508828169167]" color=black]
+	"4_1_0_None" [label="depth 4, action 0, score 0.454299658536911, env state: None, ucb = 0.454299658536911, ucb_reason = [0.454299658536911, 1.6898547410964966, 0, 0.0, 1, 19653, 19652, 0.0]" color=black]
+	"3_1_1_None" -> "4_1_0_None"
+	"3_1_1_None" [label="depth 3, action 1, score 2.3733717723193073, env state: None, ucb = 2.3733717723193073, ucb_reason = [1.3679218390676484, 1.6085889339447021, 1, 1.0, 2, 19654, 19652, 0.6250508828169167]" color=black]
+	"4_1_1_None" [label="depth 4, action 1, score 0.4568135440349579, env state: None, ucb = 0.4568135440349579, ucb_reason = [0.4568135440349579, 1.6085889339447021, 0, 0.0, 1, 19653, 19652, 0.0]" color=black]
+	"3_1_1_None" -> "4_1_1_None"
+	"2_1_1_None" [label="depth 2, action 1, score 2.3273348281799633, env state: None, ucb = 2.3273348281799633, ucb_reason = [1.4169846575372578, 1.4564417004580985, 1, 1.0, 2, 19654, 19652, 0.6250508828169167]" color=black]
+	"3_1_1_None" [label="depth 3, action 1, score 2.3733717723193073, env state: None, ucb = 2.3733717723193073, ucb_reason = [1.3679218390676484, 1.6085889339447021, 1, 1.0, 2, 19654, 19652, 0.6250508828169167]" color=black]
+	"2_1_1_None" -> "3_1_1_None"
+	"1_None_1_None" [label="depth 1, action 1, score 2.4620333426127865, env state: None, ucb = 2.4620333426127865, ucb_reason = [1.4565974175930023, 1.6085665225982666, 1, 1.0, 2, 19654, 19652, 0.6250508828169167]" color=black]
+	"2_1_1_None" [label="depth 2, action 1, score 2.3273348281799633, env state: None, ucb = 2.3273348281799633, ucb_reason = [1.4169846575372578, 1.4564417004580985, 1, 1.0, 2, 19654, 19652, 0.6250508828169167]" color=black]
+	"1_None_1_None" -> "2_1_1_None"
+	"0_seed_root_tensor([0., 1.])" [label="depth 0, action root, score 0, env state: tensor([0., 1.]), ucb = 0, ucb_reason = []" color=green]
+	"1_None_1_None" [label="depth 1, action 1, score 2.4620333426127865, env state: None, ucb = 2.4620333426127865, ucb_reason = [1.4565974175930023, 1.6085665225982666, 1, 1.0, 2, 19654, 19652, 0.6250508828169167]" color=black]
+	"0_seed_root_tensor([0., 1.])" -> "1_None_1_None"
+}

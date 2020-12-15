@@ -4,7 +4,7 @@ import subprocess
 import gym
 from gym_minesweeper.envs import MinesweeperEnv
 import numpy as np
-
+from .mrgris.mrgris_python3 import api_solve
 
 class SolverException(Exception):
     pass
@@ -44,7 +44,7 @@ class MinesweeperGuidedEnv(MinesweeperEnv):
             return np.empty((self.width, self.height))
 
         ansi_board = self.render("ansi")
-        result = self.api_solve({
+        result = api_solve({
             "board": ansi_board,
             "total_mines": self.mines_count
         })
@@ -62,25 +62,6 @@ class MinesweeperGuidedEnv(MinesweeperEnv):
 
         assert None not in matrix
         return matrix
-
-    @staticmethod
-    def api_solve(payload):
-        try:
-            return ast.literal_eval(subprocess.run(
-                [
-                    "C:/users/sscho/anaconda3/envs/mrgris/python.exe",
-                    "-c",
-                    "from minesweepr.minesweeper_util import api_solve;" +
-                    "print(api_solve({}))".format(payload)
-                ],
-                capture_output=True,
-                check=True,
-                timeout=2
-            ).stdout.decode("utf-8"))
-        except subprocess.CalledProcessError as e:
-            print(e.stdout)
-            raise SolverException("api_solve errored with message below:\n\n{}"
-                                  .format(e.stderr.decode("utf-8")))
 
     @staticmethod
     def _parse_solver_coordinate(coordinate):
