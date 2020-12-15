@@ -26,9 +26,9 @@ class MinesweeperGuidedEnv(MinesweeperEnv):
             shape=(2, self.width, self.height))
 
     def step(self, action):
-        observation, *output = super(MinesweeperGuidedEnv, self).step(action)
+        observation, reward, done, info = super(MinesweeperGuidedEnv, self).step(action)
         observation = self._get_guided_observation()
-        return observation, *output
+        return observation, reward, done, info
 
     def reset(self):
         super(MinesweeperGuidedEnv, self).reset()

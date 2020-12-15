@@ -178,9 +178,9 @@ def condense_supercells(rules):
     cell_rules_map = map_reduce(rules, lambda rule: [(cell, rule) for cell in rule.cells], set_)
     # for each 'list of rules appearing in', list of cells that share that ruleset (these cells
     # thus only ever appear together in the same rules)
-    rules_supercell_map = map_reduce(iter(cell_rules_map.items()), lambda cell, rules: [(rules, cell)], set_)
+    rules_supercell_map = map_reduce(iter(cell_rules_map.items()), lambda cell_rules: [(cell_rules[1], cell_rules[0])], set_)
     # for each original rule, list of 'supercells' appearing in that rule
-    rule_supercells_map = map_reduce(iter(rules_supercell_map.items()), lambda rules, cell_: [(rule, cell_) for rule in rules], set_)
+    rule_supercells_map = map_reduce(iter(rules_supercell_map.items()), lambda rules_cell_: [(rule, rules_cell_[1]) for rule in rules_cell_[0]], set_)
 
     return ([rule.condensed(rule_supercells_map) for rule in rules], list(rules_supercell_map.values()))
 
@@ -227,6 +227,12 @@ class Reduceable(ImmutableMixin):
 
     def __repr__(self):
         return 'Reduceable(superrule=%s, subrule=%s)' % (self.superrule, self.subrule)
+
+    def __lt__(self, x):
+        if x.metric() == self.metric():
+            return True
+        else:
+            return sum(self.metric()) < sum(x.metric()) 
 
 class CellRulesMap(object):
     """a utility class mapping cells to the rules they appear in"""
@@ -320,8 +326,9 @@ class RuleReducer(object):
 
     def add_reduceable(self, reduc):
         # priority queue priorities are lowest first
-        prio = tuple(-k for k in reduc.metric())
-        self.candidate_reductions.put((prio, reduc))
+        prio = tuple([k for k in reduc.metric()])
+        #print(prio + (reduc, ))
+        self.candidate_reductions.put(prio + (reduc, ))
         
     def update_reduceables(self, rule):
         """update the index of which rules are reduceable from others"""
@@ -344,7 +351,7 @@ class RuleReducer(object):
     def pop_best_reduction(self):
         """get the highest-value reduction to perform next"""
         while not self.candidate_reductions.empty():
-            reduction = self.candidate_reductions.get()[1]
+            reduction = self.candidate_reductions.get()[-1]
             if not reduction.contained_within(self.active_rules):
                 continue
             return reduction

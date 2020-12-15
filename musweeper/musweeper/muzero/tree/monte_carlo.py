@@ -56,6 +56,7 @@ class monte_carlo_search_tree:
                     continue
                 self.set_values_for_expand_a_node(node.create_node(action), model)
             found_leaf = True
+        assert len(list(node.children.values())) > 0, "should have child nodes (is_root={})".format(is_root)
         best_child_node = max(list(node.children.values()), key=lambda node: node.upper_confidence_boundary())
         return best_child_node, found_leaf
 

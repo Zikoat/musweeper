@@ -4,7 +4,7 @@ import numpy as np
 from ..model.components import transform_input
 from ..tree.temperture import *
 
-def play_game(model, env, self_play=False, custom_end_function=None, custom_reward_function=None, timeout_steps=100):
+def play_game(model, env, self_play=False, custom_end_function=None, custom_reward_function=None, custom_state_function=None, extra_loss_tracker=None, timeout_steps=100):
 	model.reset()
 	observation = env.reset()
 	game_history = game_event_history()
@@ -24,13 +24,17 @@ def play_game(model, env, self_play=False, custom_end_function=None, custom_rewa
 			)
 		else:
 			model.prediction.debugger.start_track_time("game play thinking")
+			observation = custom_state_function(env) if custom_state_function is not None else observation
 			state = transform_input(observation)
+			info = extra_loss_tracker(env) if extra_loss_tracker else None
 
 			if model.use_naive_search:
 				best_action = model.plan_action_naive(state)
 			else:
 				legal_actions = getattr(env, "legal_actions", None)
 				legal_actions = legal_actions() if legal_actions is not None else None
+				if len(legal_actions) == 0:
+					break
 #				legal_actions = None
 				best_action = temperature_softmax(model.plan_action(state, legal_actions), T=(temperature), size=model.action_size)
 				temperature *= 0.9
@@ -40,12 +44,14 @@ def play_game(model, env, self_play=False, custom_end_function=None, custom_rewa
 				done = custom_end_function(env)
 			if custom_reward_function is not None:
 				reward = custom_reward_function(env, done)
+
 			game_history.add(
 				reward=torch.tensor([reward]).reshape((1, -1)),
 				action=best_action,
 				policy=None if model.use_naive_search else model.tree.get_policy(),
 				value=torch.tensor([1]).reshape((1, -1)) if not done else torch.tensor([0]).reshape((1, -1)),
 				state=state,
+				info=info
 			)
 			model.reset()
 		step += 1

@@ -25,15 +25,25 @@ def get_model(env):
 
 if __name__ == "__main__":
 	env = gym.make("MinesweeperGuided-v0", width=5, height=5, mine_count=5)
-	print(env.reset())
+	
+	#print(env.reset())
 	"""
+	obs = env.reset()
+	done = False
+	while not done:
+		best_action = random.randint(0, 24)
+		observation, reward, done = env.step(best_action)[:3]
+		print(observation)
+	"""
+	extra_loss_tracker = lambda env: env.get_probability_matrix()
+	custom_state_function = lambda env: env._get_observation()
+
 	model, optimizer = get_model(env)
 
-	timer = clock(60 * 60)
+	timer = clock(60 * 3)
 	# (np.count_nonzero(env.open_cells) *
 #	output = train(model, env, optimizer, timer_function=lambda: timer(), custom_end_function=lambda env: env.unnecessary_steps > 0 or np.count_nonzero(np.logical_and(env.open_cells, env.mines)) > 0, custom_reward_function=lambda env, done: (1 - int(done)))
-	output = train(model, env, optimizer, timer_function=lambda: timer(), custom_end_function=lambda env: env.unnecessary_steps > 0 or np.count_nonzero(np.logical_and(env.open_cells, env.mines)) > 0)#, custom_reward_function=lambda env, done: (1 - int(done)))
+#, custom_reward_function=lambda env, done: (1 - int(done)))
+	output = train(model, env, optimizer, timer_function=lambda: timer(), custom_end_function=lambda env: env.unnecessary_steps > 0 or np.count_nonzero(np.logical_and(env.open_cells, env.mines)) > 0, extra_loss_tracker=extra_loss_tracker, custom_state_function=custom_state_function)
 	print(output)
 	model.save(optimizer)
-	"""
-	

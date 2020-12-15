@@ -88,6 +88,12 @@ def loss_from_game(model, game_history, debug=False):
 			else:
 				loss_action = loss_error_actions(predicted_action.reshape(1, -1), actual_action.long())
 			
+			mrgris_state = full_game_history[t + k].info
+			if mrgris_state is not None:
+				mrgris_state = torch.flatten(transform_input(mrgris_state))
+				mrgris_state = mrgris_state.reshape(predicted_action.shape)
+				loss_action += torch.sum(-mrgris_state * torch.log(predicted_action))
+
 			loss_value = loss_error(predicted_value, actual_value)
 			if debug:
 				print("reward : {} ({}, {}), action : {}({}, {}), value: {}".format(loss_reward, predicted_reward, actual_reward, loss_action, predicted_action, actual_action, loss_value) )
@@ -112,7 +118,7 @@ def loss_from_game(model, game_history, debug=False):
 	return entire_loss
 
 
-def train(model, env, optimizer, timer_function, log=False, print_interval=15, update_interval=15, custom_end_function=None, custom_reward_function=None):
+def train(model, env, optimizer, timer_function, log=False, print_interval=15, update_interval=15, custom_end_function=None, custom_reward_function=None, custom_state_function=None, extra_loss_tracker=None):
 	game_replay_buffer = replay_buffer()
 
 	i = 0
@@ -127,7 +133,7 @@ def train(model, env, optimizer, timer_function, log=False, print_interval=15, u
 				game_score)//2], max(game_score), sum(game_score)/len(game_score), print_interval, sum(game_score[-print_interval:]), last_loss, tree_depth, best_explored))
 			model.prediction.debugger.write_to_tensorboard("avg_score", sum(game_score[-print_interval:])/print_interval, None)
 
-		last_game = play_game(model, env, custom_end_function=custom_end_function, custom_reward_function=custom_reward_function)
+		last_game = play_game(model, env, custom_end_function=custom_end_function, custom_reward_function=custom_reward_function, custom_state_function=custom_state_function, extra_loss_tracker=extra_loss_tracker)
 		game_replay_buffer.add(last_game)
 		if game_replay_buffer.is_full() and i % update_interval == 0:
 			# we loop over and get 3 batches instead of doing many small updates
