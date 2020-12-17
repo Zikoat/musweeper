@@ -33,7 +33,7 @@ def play_game(model, env, self_play=False, custom_end_function=None, custom_rewa
 			else:
 				legal_actions = getattr(env, "legal_actions", None)
 				legal_actions = legal_actions() if legal_actions is not None else None
-				if len(legal_actions) == 0:
+				if legal_actions is not None and len(legal_actions) == 0:
 					break
 #				legal_actions = None
 				best_action = temperature_softmax(model.plan_action(state, legal_actions), T=(temperature), size=model.action_size)

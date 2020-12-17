@@ -17,7 +17,7 @@ def get_model(env):
 	model = muzero(env, representation, dynamics,
 				   prediction, max_search_depth=2)
 	load_model_path = "../ignore/muzero"
-	optimizer = optim.Adam(model.parameters(), lr=0.01, weight_decay=0.01)
+	optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=0.01)
 	if os.path.isfile(load_model_path):
 		model.load(load_model_path, optimizer, cpu=True)
 	return model, optimizer

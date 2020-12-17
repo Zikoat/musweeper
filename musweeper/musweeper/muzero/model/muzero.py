@@ -89,9 +89,6 @@ class muzero(nn.Module):
 		model_world = self.representation(state)
 		for a in actions:
 			model_world, reward = self.dynamics(model_world, a)
-			#action, policy = model.think(observation)
-			#best_action = action.item()
-			#observation, reward, done = env.step(best_action)[:3]
 			policy, value = self.prediction(model_world)
 			game_history.add(
 				action=torch.argmax(policy).item(),
@@ -106,6 +103,7 @@ class muzero(nn.Module):
 		torch.save({
             'model_state_dict': self.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
+            "main_hidden_layer_size": self.dynamics.main_hidden_layer_size,
         }, 'muzero')
 
 	def load(self, path, optimizer, cpu=False):
@@ -117,9 +115,18 @@ class muzero(nn.Module):
 		optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 		return self
 
-	def act(self, state, env):
+	def act(self, state, env):#, *args):
+		self.eval()
+		self.reset()
 		legal_actions = getattr(env, "legal_actions", None)
 		legal_actions = legal_actions() if legal_actions is not None else None
-		best_action = temperature_softmax(self.plan_action(state, legal_actions), T=1, size=self.action_size)
+		assert legal_actions is not None
+		best_action, softmax = temperature_softmax(self.plan_action(state, legal_actions), T=1, size=self.action_size, with_softmax=True, get_legal_only=True)
+		if best_action not in legal_actions:
+			print(best_action, legal_actions)
+			print(softmax[best_action])
+			print(softmax)
+			print(len(legal_actions))
+			print(len(self.tree.root.children))
+		assert best_action in legal_actions
 		return best_action
-	

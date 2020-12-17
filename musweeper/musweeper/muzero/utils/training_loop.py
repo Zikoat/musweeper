@@ -23,6 +23,11 @@ def loss_from_game(model, game_history, debug=False):
 	K = model.max_search_depth
 	length = int(game_history.length)
 	full_game_history = list(game_history.history)
+
+	total_loss_reward = total_loss = transform_input(torch.tensor(0, dtype=torch.float64))
+	total_loss_action = total_loss = transform_input(torch.tensor(0, dtype=torch.float64))
+	total_loss_value = total_loss = transform_input(torch.tensor(0, dtype=torch.float64))
+
 	for t in range(length):
 		total_loss = transform_input(torch.tensor(0, dtype=torch.float64))
 		assert full_game_history[t].state is not None, "state should not be none {}".format(
@@ -32,7 +37,7 @@ def loss_from_game(model, game_history, debug=False):
 		if (t + K) < length:
 			for _ in range((t + K), length):	
 				full_game_history.append(game_history.add(
-					reward = torch.tensor([0]),
+					reward = transform_input(torch.tensor([0])),
 					action = np.random.randint(2),
 					policy = torch.zeros((model.action_size)),
 					value = 0,
@@ -51,7 +56,8 @@ def loss_from_game(model, game_history, debug=False):
 				break
 			predicted_reward = transform_input(predicted_rollout_game_history.history[k].reward.float())
 			actual_reward = transform_input(full_game_history[t + k].reward.float())
-			actual_reward = (actual_reward[0] if actual_reward.dim() > 1 else actual_reward)
+			actual_reward = transform_input(actual_reward[0] if actual_reward.dim() > 1 else actual_reward)
+			actual_reward = actual_reward.reshape(predicted_reward.shape)
 
 			use_policy_loss = full_game_history[t + k].policy is not None 
 			predicted_action = transform_input(
@@ -61,11 +67,7 @@ def loss_from_game(model, game_history, debug=False):
 				torch.tensor([actual_action_input])) if not torch.is_tensor(actual_action_input) else transform_input(actual_action_input)
 
 			predicted_value = transform_input(torch.tensor([float(predicted_rollout_game_history.history[k].value)], dtype=torch.float64))
-			actual_value = transform_input(torch.tensor(
-				[float(full_game_history[t + k].value)], dtype=torch.float64))
-
-		#	predicted_value = predicted_reward
-		#	actual_value = actual_reward
+			actual_value = transform_input(torch.tensor([float(full_game_history[t + k].value)], dtype=torch.float64))
 
 			assert 0 <= predicted_reward.item() and predicted_reward.item(
 			) <= 1, "reward should be in interval [0, 1] {}".format(predicted_reward)
@@ -81,6 +83,8 @@ def loss_from_game(model, game_history, debug=False):
 			) <= 1, "value should be in interval [0, 1], got {}".format(predicted_value)
 			assert 0 <= actual_value.item() and actual_value.item(
 			) <= 1, "value should be in interval [0, 1], got {}".format(actual_value)
+			assert predicted_reward.shape == actual_reward.shape, "{}, {}".format(predicted_reward.shape, actual_reward.shape)
+			assert predicted_value.shape == actual_value.shape, "{}, {}".format(predicted_value.shape, actual_value.shape)
 
 			loss_reward = loss_error(predicted_reward, actual_reward)
 			if use_policy_loss:
@@ -92,29 +96,24 @@ def loss_from_game(model, game_history, debug=False):
 			if mrgris_state is not None:
 				mrgris_state = torch.flatten(transform_input(mrgris_state))
 				mrgris_state = mrgris_state.reshape(predicted_action.shape)
-				loss_action += torch.sum(-mrgris_state * torch.log(predicted_action))
+				loss_action += 2 * torch.sum(-mrgris_state * torch.log(predicted_action))
 
 			loss_value = loss_error(predicted_value, actual_value)
-			if debug:
-				print("reward : {} ({}, {}), action : {}({}, {}), value: {}".format(loss_reward, predicted_reward, actual_reward, loss_action, predicted_action, actual_action, loss_value) )
 
-			model.prediction.debugger.write_to_tensorboard("predicted_reward", predicted_reward.item(), None)
-			model.prediction.debugger.write_to_tensorboard("actual_reward", actual_reward.item(), None)
-
-			model.prediction.debugger.write_to_tensorboard("predicted_value", predicted_value.item(), None)
-			model.prediction.debugger.write_to_tensorboard("actual_value", actual_value.item(), None)
-
-			model.prediction.debugger.write_to_tensorboard("reward_loss", loss_reward, None)
-			model.prediction.debugger.write_to_tensorboard("action_loss", loss_action, None)
-			model.prediction.debugger.write_to_tensorboard("value_loss", loss_value, None)
+			total_loss_reward += loss_reward
+			total_loss_action += loss_action
+			total_loss_value += loss_value
 
 			total_loss += loss_reward + loss_action + loss_value
 		entire_loss += scale_gradient(total_loss, 1 / K)
-	#	print(entire_loss)
-		debug = False
 		if had_to_fill:
 			break
-#		model.reset()
+
+	model.prediction.debugger.write_to_tensorboard("reward_loss", total_loss_reward / length, None)
+	model.prediction.debugger.write_to_tensorboard("action_loss", total_loss_action / length, None)
+	model.prediction.debugger.write_to_tensorboard("value_loss", total_loss_value / length, None)
+	assert not torch.isnan(entire_loss).any()
+
 	return entire_loss
 
 
@@ -138,11 +137,14 @@ def train(model, env, optimizer, timer_function, log=False, print_interval=15, u
 		if game_replay_buffer.is_full() and i % update_interval == 0:
 			# we loop over and get 3 batches instead of doing many small updates
 			# (smaller loss, model hopefully learns better)
-			for _ in range(16):
+			for _ in range(32):
 				optimizer.zero_grad()
 				total_loss = transform_input(torch.tensor(0, dtype=torch.float64))
 				for game in game_replay_buffer.get_batch():
 					total_loss += loss_from_game(model, game, debug=print_debug)
+				total_loss /= game_replay_buffer.batch_size
+				assert torch.is_tensor(total_loss)
+				assert not torch.isnan(total_loss).any()
 				total_loss.backward()
 				last_loss = total_loss.item()
 				optimizer.step()
@@ -152,3 +154,4 @@ def train(model, env, optimizer, timer_function, log=False, print_interval=15, u
 		game_score.append(last_game.historic_reward)
 		i += 1
 	return game_score
+

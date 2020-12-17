@@ -134,53 +134,6 @@ class TestMonteCarlo(unittest.TestCase):
 			assert max(output, key=lambda x: x.score_metric()).node_id == best_action
 			for component in [prediction, dynamics, representation]:
 				assert len(component.outputs) == 0, component
-	
-	def test_should_prune_search_tree(self):
-		dynamics = mock_model(name="dynamics", outputs=[
-			[torch.tensor([0, 1]), torch.tensor([1])],
-			[torch.tensor([0, 0]), torch.tensor([0])],
-			[torch.tensor([0, 1]), torch.tensor([1])],
-			[torch.tensor([0, 0]), torch.tensor([0])],
-			[torch.tensor([0, 1]), torch.tensor([1])],
-			[torch.tensor([0, 0]), torch.tensor([0])],
-			#		[torch.tensor([0, 1]), torch.tensor([1])],
-			#		[torch.tensor([0, 0]), torch.tensor([0])],
-		])
-		# output policy, value
-		prediction = mock_model(name="prediction", outputs=[
-			[torch.tensor([0, 0]), torch.tensor([1])],
-			[torch.tensor([0, 0]), torch.tensor([0.2])],
-			[torch.tensor([0, 0]), torch.tensor([1])],
-			[torch.tensor([0, 0]), torch.tensor([0.2])],
-			[torch.tensor([0, 0]), torch.tensor([1])],
-			[torch.tensor([0, 0]), torch.tensor([0.2])],
-			[torch.tensor([0, 0]), torch.tensor([1])],
-			[torch.tensor([0, 0]), torch.tensor([0.2])],
-		])
-
-		# output internal state representation
-		representation = mock_model(name="representation", outputs=[])
-
-		max_search_depth = 3
-		model = muzero(None, representation, dynamics,
-					   prediction, max_search_depth=max_search_depth)
-
-		root = node(None)
-		root.min_max_node_tracker.update(0)
-		root.min_max_node_tracker.update(10)
-
-		child = node(root)
-		child.node_id = 1
-		root.children[child.node_id] = child
-
-		top_k_nodes_to_search = 1
-		tree = monte_carlo_search_tree(None, max_search_depth=max_search_depth,
-									   top_k_nodes_to_search=top_k_nodes_to_search, random_rollout_metric=lambda tree, node: False)
-		tree.root = root
-		tree.set_values_for_expand_a_node(child, model)
-
-#		assert len(root.children) == top_k_nodes_to_search
-		assert np.isclose(torch.sum(tree.get_policy()), 1)
 
 if __name__ == '__main__':
 	unittest.main()

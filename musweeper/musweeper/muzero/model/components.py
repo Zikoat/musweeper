@@ -23,12 +23,14 @@ class shared_backbone:
 	def __init__(self):
 		self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 		self.debugger = model_debugger()
+#		self.shared_hidden_size = 16
+		self.main_hidden_layer_size = 64
 
 class BasicConv(nn.Module, shared_backbone):
 	def __init__(self, output=120):
 		super().__init__()
 		shared_backbone.__init__(self)
-		self.output_size = 6
+		self.output_size = 96
 
 		self.conv1 = nn.Conv2d(1, 6, 3).to(self.device)
 		self.fc1 = nn.Linear(self.output_size, output).to(self.device)
@@ -39,8 +41,9 @@ class BasicConv(nn.Module, shared_backbone):
 			x = x.reshape(padding + x.shape)
 		x = F.max_pool2d(F.relu(self.conv1(x)), (2, 2))
 		x = x.view(-1, self.output_size)
+		assert x.shape[0] == 1
+		assert len(x.shape) == 2
 		return F.relu(self.fc1(x))
-
 
 class component_dynamics(nn.Module, shared_backbone):
 	"""
@@ -51,12 +54,11 @@ class component_dynamics(nn.Module, shared_backbone):
 	def __init__(self, representation_size, action_size):
 		super(component_dynamics, self).__init__()
 		shared_backbone.__init__(self)
-		self.shared_hidden_size = 16
 
-		self.preprocess_state = nn.Linear(representation_size, self.shared_hidden_size).to(self.device)
-		self.preprocess_action = nn.Linear(action_size, self.shared_hidden_size).to(self.device)
+		self.preprocess_state = nn.Linear(representation_size, self.main_hidden_layer_size).to(self.device)
+		self.preprocess_action = nn.Linear(action_size, self.main_hidden_layer_size).to(self.device)
 
-		self.combined = nn.Linear(2 * self.shared_hidden_size, 128).to(self.device)
+		self.combined = nn.Linear(2 * self.main_hidden_layer_size, 128).to(self.device)
 
 		self.reward = nn.Linear(128, 1).to(self.device)
 		self.new_state = nn.Linear(128, representation_size).to(self.device)
@@ -117,11 +119,10 @@ class component_predictions(nn.Module, shared_backbone):
 		super(component_predictions, self).__init__()
 		shared_backbone.__init__(self)
 
-		main_hidden_layer_size = 32
-		second_hidden_layer_size = main_hidden_layer_size // 2
+		second_hidden_layer_size = self.main_hidden_layer_size // 2
 
-		self.preprocess_state = nn.Linear(representation_size, main_hidden_layer_size).to(self.device)
-		self.combined = nn.Linear(main_hidden_layer_size, second_hidden_layer_size).to(self.device)
+		self.preprocess_state = nn.Linear(representation_size, self.main_hidden_layer_size).to(self.device)
+		self.combined = nn.Linear(self.main_hidden_layer_size, second_hidden_layer_size).to(self.device)
 
 		self.value = nn.Linear(second_hidden_layer_size, 1).to(self.device)
 		self.policy = nn.Linear(second_hidden_layer_size, action_size).to(self.device)
@@ -168,13 +169,12 @@ class component_representation(nn.Module, shared_backbone):
 		super(component_representation, self).__init__()
 		shared_backbone.__init__(self)
 
-		main_hidden_layer_size = 32
-		second_hidden_layer_size = main_hidden_layer_size // 2
+		second_hidden_layer_size = self.main_hidden_layer_size // 2
 
 #		self.prepr
-		self.preprocess_state = BasicConv(output=main_hidden_layer_size).to(self.device)
-		#nn.Linear(env_size, main_hidden_layer_size).to(self.device)
-		self.combined = nn.Linear(main_hidden_layer_size, second_hidden_layer_size).to(self.device)
+		self.preprocess_state = BasicConv(output=self.main_hidden_layer_size).to(self.device)
+		#nn.Linear(env_size, self.main_hidden_layer_size).to(self.device)
+		self.combined = nn.Linear(self.main_hidden_layer_size, second_hidden_layer_size).to(self.device)
 		self.representation = nn.Linear(second_hidden_layer_size, representation_size).to(self.device)
 
 	def forward(self, state):

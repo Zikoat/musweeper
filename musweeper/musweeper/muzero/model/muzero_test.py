@@ -59,9 +59,10 @@ class TestMuzero(unittest.TestCase):
 			best_node = max(output, key=lambda node: node.score_metric())
 			assert best_node.depth == len(actions_history) + 1
 			assert sum(list(set([node.max_depth for node in output]))) > 0
-#			assert model.tree.root.max_depth > 0
-			# both children should have a value 
 			assert best_node.upper_confidence_boundary() < sum([i.upper_confidence_boundary() for i in output])
+			assert np.isclose(torch.sum(model.tree.get_policy()), 1)
+			assert 0 < best_node.explored_count 
+			assert 0 < len(best_node.children)
 			best_action = best_node.node_id
 			observation, reward, done = env.step(best_action)
 			model.update(observation, best_action)
@@ -95,6 +96,7 @@ class TestMuzero(unittest.TestCase):
 				assert 1 == len(active_nodes), "bad state at {}".format(node_action.depth)
 			current_root = node_action
 		assert 2 == max_children_count
+
 
 if __name__ == '__main__':
 	unittest.main()

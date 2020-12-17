@@ -111,7 +111,8 @@ class monte_carlo_search_tree:
         search_depth = 0
         while not found_leaf and search_depth < 50:
             current_node, found_leaf = self.select_best_node(current_node, model, is_root=(search_depth == 0))
-            input_node.max_depth = max(input_node.max_depth, current_node.depth)
+            if input_node:
+                input_node.max_depth = max(input_node.max_depth, current_node.depth)
             search_depth += 1
         return current_node
 
