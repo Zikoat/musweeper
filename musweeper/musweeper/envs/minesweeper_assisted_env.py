@@ -1,4 +1,4 @@
-from src.envs.minesweeper_guided_env import MinesweeperGuidedEnv
+from ..envs.minesweeper_guided_env import MinesweeperGuidedEnv
 from gym.envs.registration import register
 import numpy as np
 

@@ -1,8 +1,8 @@
-from src.agents.agent import Agent
+from .agent import Agent
 import numpy as np
 import random
 
-from src.envs.minesweeper_guided_env import MinesweeperGuidedEnv
+from ..envs.minesweeper_guided_env import MinesweeperGuidedEnv
 
 
 class LocPrefAgent(Agent):
