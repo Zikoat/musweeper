@@ -1,4 +1,4 @@
-aimport time
+import time
 import gym
 import gym_minesweeper
 import torch.optim as optim
