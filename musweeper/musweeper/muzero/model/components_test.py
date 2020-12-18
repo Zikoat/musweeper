@@ -4,7 +4,7 @@ import torch
 
 class TestComponents(unittest.TestCase):
     def test_conv(self):
-        component = BasicConv()#1, 4, hidden_output=16)
+        component = BasicConv()
         env = torch.rand(1, 1, 10, 10)
         output = component(env)
         assert output.shape[0] == 1
@@ -13,3 +13,4 @@ class TestComponents(unittest.TestCase):
 
 if __name__ == "__main__":
     TestComponents()
+    

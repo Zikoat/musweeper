@@ -32,7 +32,9 @@ class TestSelfplay(unittest.TestCase):
 		env = BasicEnv()
 		representation, dynamics, prediction = create_model(env, testing=True)
 		max_search_depth = 3
-		model = muzero(env, representation, dynamics, prediction, max_search_depth=max_search_depth, use_naive_search=True)
+		model = muzero(env, representation, dynamics, prediction, max_search_depth=max_search_depth, config={
+			"use_naive_search": True
+		})
 		output = play_game(model, env)
 		for i in output.history:
 			assert i.value <= 1 and i.value >= 0

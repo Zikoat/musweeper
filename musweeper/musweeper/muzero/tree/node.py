@@ -104,12 +104,19 @@ class node:
                 noise * root_exploration_fraction
 
     def disable_illegal_actions(self, legal_actions):
-        if legal_actions is None:
-            return None
-        # we just delete the illegal actions from the node
-        for action in list(self.children.keys()):
-            if action not in legal_actions:
-                del self.children[action]
+        """
+        Removes illegal actions
+
+        Parameters
+        ----------
+        legal_actions : list
+            list of legal actions
+        """
+        if not legal_actions is None:
+            # we just delete the illegal actions from the node
+            for action in list(self.children.keys()):
+                if action not in legal_actions:
+                    del self.children[action]
 
     def search_value_exploration_exploration(self):
         """
@@ -217,37 +224,37 @@ class node:
     @property
     def value(self):
         """
-                Return the value of the node
+        Return the value of the node
 
-                Returns
-                -------
-                float
-                        value of node (predicted by model)
-                """
+        Returns
+        -------
+        float
+                value of node (predicted by model)
+        """
         return self.value_sum
 
     @value.setter
     def value(self, value):
         """
-                Set the value
+        Set the value
 
-                Parameters
-                ----------
-                value : float
-                        the value of the node
-                """
+        Parameters
+        ----------
+        value : float
+                the value of the node
+        """
         self.value_sum = value.item() if torch.is_tensor(value) else value
         self.min_max_node_tracker.update(self.node_value())
 
     def node_value(self):
         """
-                The value of the node based on exploration
+        The value of the node based on exploration
 
-                Returns
-                -------
-                float
-                        value divided by exploration count
-                """
+        Returns
+        -------
+        float
+                value divided by exploration count
+        """
         if self.explored_count == 0:
             return 0
         return self.value_sum / self.explored_count

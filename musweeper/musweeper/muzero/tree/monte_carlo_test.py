@@ -10,7 +10,7 @@ class TestMonteCarlo(unittest.TestCase):
 		env = BasicEnv()
 		max_search_depth = 3
 		# even if rollout is False, it will do rollout since none of the nodes has a children (yet)
-		self.tree = monte_carlo_search_tree(None, max_search_depth=max_search_depth, random_rollout_metric=lambda tree, node: False)
+		self.tree = monte_carlo_search_tree(None, max_search_depth=max_search_depth)
 		representation, dynamics, prediction = create_model(env, testing=True)
 		max_search_depth = 3
 		self.model = muzero(env, representation, dynamics, prediction, max_search_depth=max_search_depth)
@@ -46,8 +46,7 @@ class TestMonteCarlo(unittest.TestCase):
 
 		max_search_depth = 3
 		# even if rollout is False, it will do rollout since none of the nodes has a children (yet)
-		tree = monte_carlo_search_tree(
-			None, max_search_depth=max_search_depth, random_rollout_metric=lambda tree, node: False)
+		tree = monte_carlo_search_tree(None, max_search_depth=max_search_depth)
 		tree.root = root
 
 		tree.expand(root, self.model)
@@ -105,8 +104,6 @@ class TestMonteCarlo(unittest.TestCase):
 				[torch.tensor([0, 0]), torch.tensor([0])],
 				[torch.tensor([0, 1]), torch.tensor([1])],
 				[torch.tensor([0, 0]), torch.tensor([0])],
-				#		[torch.tensor([0, 1]), torch.tensor([1])],
-				#		[torch.tensor([0, 0]), torch.tensor([0])],
 			])
 			# output policy, value
 			prediction = mock_model(name="prediction", outputs=[
@@ -123,8 +120,7 @@ class TestMonteCarlo(unittest.TestCase):
 				i[0][best_action] = 1
 			# output internal state representation
 			representation = mock_model(name="representation", outputs=[
-				torch.tensor([0, 1])  # created before the search starts
-
+				torch.tensor([0, 1])
 			])
 
 			model = muzero(env, representation, dynamics,

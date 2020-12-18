@@ -11,26 +11,41 @@ from .node import *
 from .temperture import *
 
 class monte_carlo_search_tree:
-    def __init__(self, root_state, max_search_depth, action_size=2, random_rollout_metric=None, top_k_nodes_to_search=5, add_exploration_noise=True):
+    def __init__(self, root_state, max_search_depth, action_size=2, add_exploration_noise=True):
         self.max_search_depth = max_search_depth
         self.timeout = 10
-        assert root_state is None or torch.is_tensor(
-            root_state), " {} {}".format(root_state, type(root_state))
-        self.root = node(parrent=None, hidden_state=root_state)
-        self.originale_root = self.root
         self.children_count = action_size
         self.add_exploration_noise = add_exploration_noise
-
-        # coin-flip
-        self.random_rollout_metric = (lambda tree, node: random.randint(
-            0, 2) == 1) if random_rollout_metric is None else random_rollout_metric
-        self.top_k_nodes_to_search = 1 #top_k_nodes_to_search
         self.legal_actions = None
 
+        assert root_state is None or torch.is_tensor(root_state), " {} {}".format(root_state, type(root_state))
+        self.root = node(parrent=None, hidden_state=root_state)
+        self.originale_root = self.root
+
     def set_legal_actions(self, legal_actions):
+        """
+        Sets the legal actions from the root
+
+        Parameters
+        ----------
+        legal_actions : list
+            legal actions from the root
+        """
         self.legal_actions = legal_actions
 
     def is_action_legal(self, action):
+        """
+        Check if given action is legal
+
+        Parameters
+        ----------
+        action : int
+            the action
+        Returns
+        -------
+        bool
+            true if action is legal
+        """
         if self.legal_actions is None:
             return True
         return action in self.legal_actions
@@ -116,7 +131,17 @@ class monte_carlo_search_tree:
             search_depth += 1
         return current_node
 
-    def set_values_for_expand_a_node(self, new_node, model, is_child_node=False):
+    def set_values_for_expand_a_node(self, new_node, model):
+        """
+        Set the value for a expanded node
+
+        Parameters
+        ----------
+        new_node : Node
+            the expanded node
+        model : muzero
+            the model
+        """
         # when a new node is found, we assign reward and policy from the model (see Expansion in Appendix B for details)
         hidden_state = new_node.parrent.hidden_state
         action = new_node.node_id
@@ -126,28 +151,19 @@ class monte_carlo_search_tree:
             next_state, reward = model.dynamics(state, action_tensor)
             policy, value_function = model.prediction(state)
             new_node.on_node_creation(next_state, reward, policy, value_function)
-        else:
-            next_state = new_node.hidden_state
-        """
-        # create the child actions from the current node and assign a prior based on model output
-        if not is_child_node:
-            next_state_policy, _ = model.prediction(next_state)
-            next_state_policy = next_state_policy[0] if len(
-                next_state_policy.shape) > 1 else next_state_policy
-            nodes_to_search = min(
-                next_state_policy.shape[-1], self.top_k_nodes_to_search)
-            _, indices = torch.topk(next_state_policy, nodes_to_search)
-            for index in range(nodes_to_search):  # self.children_count):
-                action = indices[index].item()
-                new_node.children[action] = node(
-                    parrent=new_node, node_id=action, hidden_state=None, prior=next_state_policy[action].item())
-                self.set_values_for_expand_a_node(
-                    new_node.children[action], model, is_child_node=True)
-        """
 
     def backpropgate(self, leaf_node, start_depth, discount=0.1):
         """
         When a leaf node is found, the values will be backpropgated and updated upwards
+
+        Parameters
+        ----------
+        leaf_node : node
+            the leaf_node   
+        start_depth : int
+            the start depth, used to calculate the discount
+        discount : float, optional
+            how much we should discount, by default 0.1
         """
         cumulative_discounted_reward = 0
         visited_nodes = 0
@@ -157,9 +173,10 @@ class monte_carlo_search_tree:
             int, float], "value should be defined correctly {} {}".format(value, type(value))
 
         depth = (leaf_node.depth - start_depth)
+        assert leaf_node is not None and leaf_node != self.root
         while leaf_node is not None and leaf_node != self.root:
             node_level_diff = depth - visited_nodes
-#			cumulative_discounted_reward += (discount ** (node_level_diff) * leaf_node.reward) + leaf_node.value_of_model * discount ** visited_nodes
+            cumulative_discounted_reward += (discount ** (node_level_diff) * leaf_node.reward) + leaf_node.value_of_model * discount ** visited_nodes
 
             leaf_node.value += value
             leaf_node.explored_count += 1
@@ -186,7 +203,7 @@ class monte_carlo_search_tree:
                 leaf_node.parrent.max_depth = max(leaf_node.parrent.max_depth, leaf_node.depth)
             leaf_node.cumulative_discounted_reward = cumulative_discounted_reward
             leaf_node = leaf_node.parrent
-        return value  # cumulative_discounted_reward
+        return value
 
 
     def update_root(self, state, action):
@@ -232,6 +249,23 @@ class monte_carlo_search_tree:
         return game_state
 
     def construct_tree(self, dot, node, show_only_used_edges):
+        """
+        Construct a tree for visualization
+
+        Parameters
+        ----------
+        dot : grapth
+            graphivz grapth
+        node : node
+            root node
+        show_only_used_edges : boolean
+            if only the used path should be drawn
+
+        Returns
+        -------
+        none
+            if the node is None
+        """
         if node is None:
             return None
 
@@ -264,7 +298,24 @@ class monte_carlo_search_tree:
             dot.edge(generated_current_root, create_node(child_nodes))
 
     def draw(self, show_only_used_edges=False, view_only=False, file_name=None):
-        dot = Graph(comment='The search tree')#, engine='neato', format='png', graph_attr=dict(nodesep='12', edgesep="10", concentrate="true", overlap="scale"))
+        """
+        Draw the tree
+
+        Parameters
+        ----------
+        show_only_used_edges : bool, optional
+            should only the path take be drawn, by default False
+        view_only : bool, optional
+            should the graph be only viewed or saved, by default False
+        file_name : str, optional
+            filename, by default None
+
+        Returns
+        -------
+        str
+            filepath if file was stored
+        """
+        dot = Graph(comment='The search tree')
         self.construct_tree(dot, self.originale_root, show_only_used_edges)
         file_name = 'search-tree_{time}'.format(time=time.time()) if file_name is None else file_name
         if view_only:
@@ -274,6 +325,14 @@ class monte_carlo_search_tree:
             return file_name + '.png'
 
     def get_policy(self):
+        """
+        Get the search policy of the tree
+
+        Returns
+        -------
+        numpy.ndarray
+            the visit count of each nodes
+        """
         output_softmax, _ = create_distribution(self.root, size=self.children_count, T=1)
         return torch.from_numpy(output_softmax)
 

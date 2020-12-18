@@ -1,5 +1,6 @@
 
 from musweeper.agents import random_agent
+from musweeper.agents.mrgris_agent import *
 from musweeper.agents.random_agent import *
 from musweeper.evaluate_agent import *
 import gym
@@ -10,6 +11,10 @@ env = gym.make("Minesweeper-v0", width=10, height=10, mine_count=10)
 
 #evaluate_agent(RandomAgent(env), env)
 evaluate_agent(get_muzero_model(env)[0], env)
+
+#env = gym.make("MinesweeperAssisted-v0", width=10, height=10, mine_count=10)
+#evaluate_agent(get_muzero_model(env)[0], env)
+#evaluate_agent(LocPrefAgent(env), env)
 
 
 """

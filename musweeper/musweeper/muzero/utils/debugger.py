@@ -1,21 +1,35 @@
 import time
 from torch.utils.tensorboard import SummaryWriter
 
+# https://stackoverflow.com/questions/33243454/singleton-design-pattern-in-python-with-state
 def singleton(cls):
 	obj = cls()
-	# Always return the same object
 	cls.__new__ = staticmethod(lambda cls: obj)
-	# Disable __init__
 	try:
 		del cls.__init__
 	except AttributeError:
 		pass
 	return cls
 
-
 @singleton
 class model_debugger:
 	def __init__(self):
+		self.reset()
+
+	def reset(self, filename_suffix=""):
+		"""
+		Reset all the variables
+
+		Parameters
+		----------
+		filename_suffix : str, optional
+			the filename suffix, by default ""
+
+		Returns
+		-------
+		model_debugger
+			returns self
+		"""
 		self.model_forward_data = {
 
 		}
@@ -38,12 +52,25 @@ class model_debugger:
 		self.variable_log = {
 
 		}
-		self.tenserboard_writer = SummaryWriter()
+		self.tenserboard_writer = SummaryWriter(filename_suffix)
 		self.epoch_write_counter = {
 
 		}
-	
+		return self
+
 	def write_to_tensorboard(self, name, value, epoch):
+		"""
+		Add value to SummaryWriter
+
+		Parameters
+		----------
+		name : str
+			tag name
+		value : number
+			numeric value
+		epoch : epoch
+			Current epoch, if none a built in counter will be used
+		"""
 		if epoch is None:
 			if name not in self.epoch_write_counter:
 				self.epoch_write_counter[name] = 0
@@ -52,7 +79,7 @@ class model_debugger:
 		self.tenserboard_writer.add_scalar(name, value, epoch)
 
 	def save_tensorboard(self):
-		self.tenserboard_writer.writer.close()
+		self.tenserboard_writer.close()
 
 	def get_last_round(self):
 		"""

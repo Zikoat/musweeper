@@ -20,7 +20,7 @@ class LocPrefAgent(Agent):
         super().__init__(env)
         self.env = env
 
-    def act(self, observation, reward, done) -> int:
+    def act(self, observation, *args) -> int:
         assert np.min(observation[1]) >= 0
         if observation.ndim == 3:
             observation = observation[1]

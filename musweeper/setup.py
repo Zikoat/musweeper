@@ -30,6 +30,7 @@ setuptools.setup(
         'line_profiler',
         'gym',
         'tensorboard',
+        'opencv-python'
    #     f"gym_minesweeper @ git+https://github.com/Zikoat/gym-minesweeper#egg=gym_minesweeper"
     ]
 )

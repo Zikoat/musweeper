@@ -7,9 +7,6 @@ import numpy as np
 
 class TestMuzero(unittest.TestCase):
 	def test_plan_action(self):
-		"""
-		Testing that the model construct the monte carlo search tree
-		"""
 		env = BasicEnv()
 		representation, dynamics, prediction = create_model(env, testing=True)
 		max_search_depth = 3
@@ -43,6 +40,19 @@ class TestMuzero(unittest.TestCase):
 		assert len(tree_paths[0].children[0].children) == 2
 		assert model.tree.root.max_depth > 0
 
+		state_size = 4
+		env = BasicEnv(state_size=state_size)
+		representation, dynamics, prediction = create_model(env, testing=True)
+		max_search_depth = 3
+		model = muzero(env, representation, dynamics, prediction, max_search_depth=max_search_depth)
+
+		legal = [ 0, 1, 2, 3 ]
+		assert env.state.shape[0] == state_size
+		tree_paths = list(model.plan_action(env.state, legal).children.values())
+		assert len(tree_paths[0].children) == state_size
+		assert model.tree.root.max_depth > 0
+		assert len(tree_paths) == len(legal)
+
 	def test_should_construct_tree_in_correct_order(self):
 		env = BasicEnv()
 		representation, dynamics, prediction = create_model(env, testing=True)
@@ -64,7 +74,7 @@ class TestMuzero(unittest.TestCase):
 			assert 0 < best_node.explored_count 
 			assert 0 < len(best_node.children)
 			best_action = best_node.node_id
-			observation, reward, done = env.step(best_action)
+			observation, _, done = env.step(best_action)
 			model.update(observation, best_action)
 			depth_length += 1
 			actions_history.append(best_action)

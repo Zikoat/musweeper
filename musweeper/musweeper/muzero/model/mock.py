@@ -6,9 +6,10 @@ class mock_model:
 	Basic mock model
 	Used instead of having to create a torch module.
 	"""
-	def __init__(self, outputs=None, output_dim=None, custom_generator=None, name=""):
+	def __init__(self, outputs=None, output_dim=None, custom_generator=None, out_features=None, name=""):
 		self.debugger = model_debugger()
 		self.name = name
+		self.out_features = out_features
 		if outputs is not None:
 			self.outputs = outputs
 		elif output_dim is not None:

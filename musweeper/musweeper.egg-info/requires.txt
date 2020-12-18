@@ -4,3 +4,4 @@ graphviz
 line_profiler
 gym
 tensorboard
+opencv-python

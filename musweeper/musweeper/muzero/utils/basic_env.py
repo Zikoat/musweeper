@@ -70,7 +70,6 @@ class BasicEnv(gym.Env):
 		boolean
 			if the game is done
 		"""
-#		reward = int(action == self.active_index)
 		if self.super_simple:
 			reward = int(action == self.state[self.state_size - 1])
 		else:

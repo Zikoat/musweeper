@@ -5,6 +5,33 @@ from ..model.components import transform_input
 from ..tree.temperture import *
 
 def play_game(model, env, self_play=False, custom_end_function=None, custom_reward_function=None, custom_state_function=None, extra_loss_tracker=None, timeout_steps=100):
+	"""
+	PLays a game with a given model
+
+	Parameters
+	----------
+	model : Muzero
+		the muzero model
+	env : gym.env
+		the environment
+	self_play : bool, optional
+		should self_play be used (not fully implemented), by default False
+	custom_end_function : callable, optional
+		should a custom function be used for determing if a game is done, by default None
+	custom_reward_function : callable, optional
+		should a custom function be used for the reward function, by default None
+	custom_state_function : callable, optional
+		should a custom function be used to get the observation of the enviorment, by default None
+	extra_loss_tracker : callable, optional
+		should a function calculate a extra loss, by default None
+	timeout_steps : int, optional
+		max steps to take in a environment, by default 100
+
+	Returns
+	-------
+	game_event_history
+		the events taken place in the game
+	"""
 	model.reset()
 	observation = env.reset()
 	game_history = game_event_history()
@@ -23,7 +50,6 @@ def play_game(model, env, self_play=False, custom_end_function=None, custom_rewa
 				state=None
 			)
 		else:
-			model.prediction.debugger.start_track_time("game play thinking")
 			observation = custom_state_function(env) if custom_state_function is not None else observation
 			state = transform_input(observation)
 			info = extra_loss_tracker(env) if extra_loss_tracker else None
@@ -35,7 +61,6 @@ def play_game(model, env, self_play=False, custom_end_function=None, custom_rewa
 				legal_actions = legal_actions() if legal_actions is not None else None
 				if legal_actions is not None and len(legal_actions) == 0:
 					break
-#				legal_actions = None
 				best_action = temperature_softmax(model.plan_action(state, legal_actions), T=(temperature), size=model.action_size)
 				temperature *= 0.9
 			observation, reward, done = env.step(best_action)[:3]
