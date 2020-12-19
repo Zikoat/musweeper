@@ -1,9 +1,0 @@
-[submodule "5fc50938aa9bf21a880c2810"]
-	path = overleaf
-	url = https://git.overleaf.com/5fc50938aa9bf21a880c2810
-[submodule "gym-minesweeper"]
-	path = gym-minesweeper
-	url = https://github.com/Zikoat/gym-minesweeper.git
-[submodule "minesweepr"]
-	path = minesweepr
-	url = https://github.com/mrgriscom/minesweepr.git
