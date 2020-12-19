@@ -20,4 +20,6 @@ python -m unittest
 ```
 Using pycharm: right-click test folder -> run 'unittest in test'
 
-## 
+## Training a model
+To train the model run `muzero_with_minesweeper.py` in the `exampels` directory.  There is also code here to evaluate the trained model namely `evaluation_of_agents.py`. 
+
