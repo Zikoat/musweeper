@@ -21,7 +21,7 @@ class TestMinesweeperAssistedEnv(TestCase):
             assert not np.allclose(1, guide_observation)
 
     def test_first_open_is_mine(self):
-        env = gym.make("MinesweeperAssisted-v0", seed=0)
+        env = gym.make("MinesweeperAssisted-v0", seed=0, first_move_safe=False)
         env.step(31)
         self.assertIn("B", env.render("ansi"))
 
