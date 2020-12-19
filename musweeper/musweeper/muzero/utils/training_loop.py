@@ -7,7 +7,6 @@ from ..model.selfplay import play_game
 from .game_history import replay_buffer
 
 
-
 def scale_gradient(tensor, scale):
 	return tensor * scale + tensor.detach() * (1 - scale)
 
@@ -95,7 +94,7 @@ def loss_from_game(model, game_history, debug=False):
 			mrgris_state = full_game_history[t + k].info
 			if mrgris_state is not None:
 				mrgris_state = torch.flatten(transform_input(mrgris_state))
-				mrgris_state = mrgris_state.reshape(predicted_action.shape)
+				mrgris_state = (1 - mrgris_state.reshape(predicted_action.shape))
 				loss_action += 2 * torch.sum(-mrgris_state * torch.log(predicted_action))
 
 			loss_value = loss_error(predicted_value, actual_value)
@@ -118,7 +117,7 @@ def loss_from_game(model, game_history, debug=False):
 
 
 def train(model, env, optimizer, timer_function, log=False, print_interval=15, update_interval=15, custom_end_function=None, custom_reward_function=None, custom_state_function=None, extra_loss_tracker=None):
-	game_replay_buffer = replay_buffer()
+	game_replay_buffer = replay_buffer(batch_size=128)
 
 	i = 0
 	game_score = []
@@ -131,27 +130,25 @@ def train(model, env, optimizer, timer_function, log=False, print_interval=15, u
 			print('%d: min=%.2f median=%.2f max=%.2f eval=%.2f, sum of %d last games=%.2f, loss=%s, depth=%s, explored=%s' % (i, min(game_score), game_score[len(
 				game_score)//2], max(game_score), sum(game_score)/len(game_score), print_interval, sum(game_score[-print_interval:]), last_loss, tree_depth, best_explored))
 			model.prediction.debugger.write_to_tensorboard("avg_score", sum(game_score[-print_interval:])/print_interval, None)
-
+			model.save(optimizer, file_name=str(i))
 		last_game = play_game(model, env, custom_end_function=custom_end_function, custom_reward_function=custom_reward_function, custom_state_function=custom_state_function, extra_loss_tracker=extra_loss_tracker)
 		game_replay_buffer.add(last_game)
 		if game_replay_buffer.is_full() and i % update_interval == 0:
-			# we loop over and get 3 batches instead of doing many small updates
-			# (smaller loss, model hopefully learns better)
-			for _ in range(32):
-				optimizer.zero_grad()
-				total_loss = transform_input(torch.tensor(0, dtype=torch.float64))
-				for game in game_replay_buffer.get_batch():
-					total_loss += loss_from_game(model, game, debug=print_debug)
-				total_loss /= game_replay_buffer.batch_size
-				assert torch.is_tensor(total_loss)
-				assert not torch.isnan(total_loss).any()
-				total_loss.backward()
-				last_loss = total_loss.item()
-				optimizer.step()
-				model.prediction.debugger.write_to_tensorboard("loss", last_loss, None)
+			optimizer.zero_grad()
+			total_loss = transform_input(torch.tensor(0, dtype=torch.float64))
+			for game in game_replay_buffer.get_batch():
+				total_loss += loss_from_game(model, game, debug=print_debug)
+			total_loss /= game_replay_buffer.batch_size
+			assert torch.is_tensor(total_loss)
+			assert not torch.isnan(total_loss).any()
+			total_loss.backward()
+			last_loss = total_loss.item()
+			optimizer.step()
+			model.prediction.debugger.write_to_tensorboard("loss", last_loss, None)
 		model.prediction.debugger.write_to_tensorboard("game", last_game.historic_reward, i)
 		model.prediction.debugger.write_to_tensorboard("game_length", last_game.length, i)
 		game_score.append(last_game.historic_reward)
 		i += 1
 	return game_score
+
 

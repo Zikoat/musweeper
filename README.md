@@ -13,6 +13,12 @@ AI project using MuZero to play Minesweeper for [IMT3104](https://www.ntnu.no/st
 - [ ] Calculate average win rate on muzero
 - [ ] Evaluate muzero vs [mrgris](http://mrgris.com/projects/minesweepr/)
 
+## Install 
+```
+git submodule update --init --recursive # fetch submodules
+cd gym-minesweeper && python setup.py install # install gym-enviorment
+cd musweeper && python setup.py install # install musweeper
+```
 
 ## Testing
 ```shell script
@@ -20,3 +26,7 @@ cd muzero
 python -m unittest
 ```
 Using pycharm: right-click test folder -> run 'unittest in test'
+
+## Training a model
+To train the model run `muzero_with_minesweeper.py` in the `exampels` directory.  There is also code here to evaluate the trained model namely `evaluation_of_agents.py`. 
+

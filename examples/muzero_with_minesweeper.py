@@ -11,25 +11,35 @@ from musweeper.muzero.utils.basic_env import *
 from musweeper.muzero.utils.training_loop import *
 import numpy as np
 import os
+from musweeper.envs.minesweeper_guided_env import *
 
-def get_model(env):
-	representation, dynamics, prediction = create_model(env)
+def get_model(env, config={}):
+	lr = config.get("lr", 0.001)
+	weight_decay = config.get("weight_decay", 0.01)
+
+	representation, dynamics, prediction = create_model(env, config=config)
 	model = muzero(env, representation, dynamics,
 				   prediction, max_search_depth=2)
 	load_model_path = "../ignore/muzero"
-	optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=0.01)
-	if os.path.isfile(load_model_path):
+	optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+	if os.path.isfile(load_model_path) and config.get("load_trained", True):
 		model.load(load_model_path, optimizer, cpu=True)
 	return model, optimizer
 
 if __name__ == "__main__":
-	env = gym.make("Minesweeper-v0", width=5, height=5, mine_count=5)
+	base_config = {
 
-	model, optimizer = get_model(env)
+	}
+	base_config["lr"] = 0.001
+	base_config["weight_decay"] = 0
 
-	timer = clock(60 * 60)
-	# (np.count_nonzero(env.open_cells) *
-#	output = train(model, env, optimizer, timer_function=lambda: timer(), custom_end_function=lambda env: env.unnecessary_steps > 0 or np.count_nonzero(np.logical_and(env.open_cells, env.mines)) > 0, custom_reward_function=lambda env, done: (1 - int(done)))
-	output = train(model, env, optimizer, timer_function=lambda: timer(), custom_end_function=lambda env: env.unnecessary_steps > 0 or np.count_nonzero(np.logical_and(env.open_cells, env.mines)) > 0)#, custom_reward_function=lambda env, done: (1 - int(done)))
-	print(output)
+	env = gym.make("MinesweeperGuided-v0", width=10, height=10, mine_count=10)
+	extra_loss_tracker = lambda env: env.get_probability_matrix()
+	custom_state_function = lambda env: env._get_observation()
+	model, optimizer = get_model(env, base_config)
+
+	timer = clock(60 * 60 * 4)
+	output = train(model, env, optimizer, timer_function=lambda: timer(), custom_end_function=lambda env: env.unnecessary_steps > 0 or np.count_nonzero(np.logical_and(env.open_cells, env.mines)) > 0, extra_loss_tracker=extra_loss_tracker, custom_state_function=custom_state_function)
 	model.save(optimizer)
+	model.debugger.save_tensorboard()
+

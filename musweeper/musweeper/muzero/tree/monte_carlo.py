@@ -75,7 +75,7 @@ class monte_carlo_search_tree:
         best_child_node = max(list(node.children.values()), key=lambda node: node.upper_confidence_boundary())
         return best_child_node, found_leaf
 
-    def expand_node(self, node, model, max_leaf_node_count=25):
+    def expand_node(self, node, model, max_leaf_node_count=100):
         """
         Expand node
 
@@ -124,7 +124,7 @@ class monte_carlo_search_tree:
 
         found_leaf = False
         search_depth = 0
-        while not found_leaf and search_depth < 50:
+        while not found_leaf and search_depth < 10:
             current_node, found_leaf = self.select_best_node(current_node, model, is_root=(search_depth == 0))
             if input_node:
                 input_node.max_depth = max(input_node.max_depth, current_node.depth)

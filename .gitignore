@@ -3,3 +3,10 @@ __pycache__/
 musweeper.egg-info/
 runs/
 use_naive_search_True/
+*.sh
+makefile
+*.png
+ignore/
+output/
+build/
+dist/
