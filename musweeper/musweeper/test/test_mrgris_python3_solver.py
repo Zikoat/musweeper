@@ -1,7 +1,6 @@
 import unittest
-
 import pytest
-from musweeper.musweeper.envs.mrgris.mrgris_python3 import api_solve
+from ..envs.mrgris.mrgris_python3 import api_solve
 
 
 def test_api_solve_with_board():
