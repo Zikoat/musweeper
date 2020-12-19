@@ -3,10 +3,10 @@ AI project using MuZero to play Minesweeper for [IMT3104](https://www.ntnu.no/st
 
 
 ## todo
-- [ ] Get muzero up and running (with tests)
+- [x] Get muzero up and running (with tests)
 - [x] Merge in [Gym-minesweeper](https://github.com/Zikoat/gym-minesweeper)
 - [x] Add domain-specific knowledge to the observation space
-- [ ] Do classical steps if they are optimal
+- [x] Do classical steps if they are optimal
 - [ ] Use the domain-specific knowledge while training muzero
 - [ ] Create a small test which trains the model and plays minesweeper, and calculates the average win rate.
 - [ ] Create a simple script to run this in the colab notebook for offloading the training and eventual data analysis to Colab.
@@ -15,7 +15,6 @@ AI project using MuZero to play Minesweeper for [IMT3104](https://www.ntnu.no/st
 
 
 ## Testing
-
 ```shell script
 cd muzero
 python -m unittest
