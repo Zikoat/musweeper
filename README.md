@@ -13,6 +13,13 @@ AI project using MuZero to play Minesweeper for [IMT3104](https://www.ntnu.no/st
 - [ ] Calculate average win rate on muzero
 - [ ] Evaluate muzero vs [mrgris](http://mrgris.com/projects/minesweepr/)
 
+## Install 
+```
+git submodule update --init --recursive # fetch submodules
+cd gym-minesweeper && python setup.py install # install gym-enviorment
+cd musweeper && python setup.py install # install musweeper
+```
+
 ## Testing
 ```shell script
 cd muzero
