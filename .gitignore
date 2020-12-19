@@ -1,3 +1,5 @@
 .idea
 __pycache__/
 musweeper.egg-info/
+runs/
+use_naive_search_True/

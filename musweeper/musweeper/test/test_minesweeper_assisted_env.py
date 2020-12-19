@@ -1,9 +1,7 @@
 from unittest import TestCase
-import unittest
 import gym
 import numpy as np
 
-@unittest.skip("") 
 class TestMinesweeperAssistedEnv(TestCase):
     @classmethod
     def setUpClass(cls):

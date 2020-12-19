@@ -4,13 +4,13 @@ nondeterministic = False
 
 register(
     id='MinesweeperGuided-v0',
-    entry_point='musweeper.envs.minesweeper_guided_env:MinesweeperGuidedEnv',
+    entry_point='musweeper.musweeper.envs.minesweeper_guided_env:MinesweeperGuidedEnv',
     nondeterministic=nondeterministic,
 )
 
 register(
     id='MinesweeperAssisted-v0',
-    entry_point='musweeper.envs.minesweeper_assisted_env:MinesweeperAssistedEnv',
+    entry_point='musweeper.musweeper.envs.minesweeper_assisted_env:MinesweeperAssistedEnv',
     nondeterministic=nondeterministic,
 )
 
