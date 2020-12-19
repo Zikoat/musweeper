@@ -1,4 +1,4 @@
-from muzero_with_minesweeper import get_model as get_muzero_model
+from muzero_with_minesweeper_v1 import get_model as get_muzero_model
 import numpy as np
 import gym
 import gym_minesweeper
@@ -28,7 +28,7 @@ def bmatrix(a):
 
 def how_does_muzero_view_blank_board(model, env):
 	state = env.reset()
-	distro, searched = create_distribution(model.plan_action(state), T=1)
+	distro, searched = create_distribution(model.plan_action(state, legal_actions=env.legal_actions()), T=1)
 	print(bmatrix(distro.reshape(state.shape)))
 	print(distro)
 
@@ -53,7 +53,16 @@ def how_does_muzero_view_common_strategy(model, env):
 
 if __name__ == "__main__":
 	env = gym.make("Minesweeper-v0", width=10, height=10, mine_count=10)
-	model = get_muzero_model(env)[0]
-#	how_does_muzero_view_blank_board(model, env)
-	how_does_muzero_view_common_strategy(model, env)
+	model = get_muzero_model(env, config={"load_trained": False})[0]
+#	print(model)
+	how_does_muzero_view_blank_board(model, env)
+#	how_does_muzero_view_common_strategy(model, env)
+
+
+
+
+
+
+
+
 

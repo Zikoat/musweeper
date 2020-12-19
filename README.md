@@ -13,10 +13,11 @@ AI project using MuZero to play Minesweeper for [IMT3104](https://www.ntnu.no/st
 - [ ] Calculate average win rate on muzero
 - [ ] Evaluate muzero vs [mrgris](http://mrgris.com/projects/minesweepr/)
 
-
 ## Testing
 ```shell script
 cd muzero
 python -m unittest
 ```
 Using pycharm: right-click test folder -> run 'unittest in test'
+
+## 

@@ -30,9 +30,9 @@ class game_event_history:
 		return len(self.history)
 
 class replay_buffer:
-	def __init__(self):
-		self.memory = deque(maxlen=512)
-		self.batch_size = 8
+	def __init__(self, batch_size=8):
+		self.memory = deque(maxlen=batch_size * 4)
+		self.batch_size = batch_size
 
 	def add(self, game):
 		"""

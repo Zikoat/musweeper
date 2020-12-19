@@ -6,150 +6,67 @@ from musweeper.evaluate_agent import *
 import gym
 import gym_minesweeper
 from muzero_with_minesweeper import get_model as get_muzero_model
-
-env = gym.make("Minesweeper-v0", width=10, height=10, mine_count=10)
-
-#evaluate_agent(RandomAgent(env), env)
-evaluate_agent(get_muzero_model(env)[0], env)
-
-#env = gym.make("MinesweeperAssisted-v0", width=10, height=10, mine_count=10)
-#evaluate_agent(get_muzero_model(env)[0], env)
-#evaluate_agent(LocPrefAgent(env), env)
+import matplotlib.pyplot as plt
+import os
+import json
+from musweeper.muzero.tree.temperture import *
 
 
-"""
-BIG WORLD (10x10) and 10 mines
+output_path = os.path.dirname(os.path.abspath(__file__))
+output_path = os.path.join(output_path, "output/")
+json_cache_file = os.path.join(output_path, "cahced_info.json")
 
-Radom agent stats
-----
-Wins: 0/10, 0%
-Average reward: 1.4077777777777778
-Median reward: 0.9222222222222223
-Average steps: 4.5
-Median steps: 3.5
-Average unnecessary steps: 0.0
+def evaluation_vs_radom_agent(cached={}):
+	env = gym.make("Minesweeper-v0", width=10, height=10, mine_count=10)
 
-Best reward: 7.011111111111112
-Best opened cells: 85/100
-Avreage opened cells: 52.9/100
-Median opened cells: 70.5/100
-Highest steps: 13
----
-Wins: 0/10, 0%
-Average reward: 0.7522222222222222
-Median reward: 0.8166666666666667
-Average steps: 3.3
-Median steps: 3.0
-Average unnecessary steps: 0.0
+	random_stats = cached.get("random_stats", None)
+	muzero_stats = cached.get("muzero_stats", None)
+	if random_stats is None:
+		random_stats = evaluate_agent(RandomAgent(env), env)[:, 0].tolist()
+	if muzero_stats is None:
+		random_stats = evaluate_agent(get_muzero_model(env)[0], env)
 
-Best reward: 2.3
-Best opened cells: 76/100
-Avreage opened cells: 45.0/100
-Median opened cells: 61.5/100
-Highest steps: 8
-----
-Average reward: 1.9144444444444448
-Median reward: 0.9888888888888889
-Average steps: 5.5
-Median steps: 4.0
-Average unnecessary steps: 0.0
+	random_stats_sum = np.cumsum(random_stats)
+	muzero_stats_sum = np.cumsum(muzero_stats)
 
-Best reward: 6.811111111111112
-Best opened cells: 84/100
-Avreage opened cells: 46.5/100
-Median opened cells: 63.0/100
-Highest steps: 14
+	_, ax = plt.subplots()
+	x = np.arange(random_stats_sum.shape[0])
+	ax.plot(x, random_stats_sum, '--r', label='Random agent')
+	ax.plot(x, muzero_stats_sum, '-b', label='Muzero agent')
+	leg = ax.legend()
+	plt.title("Muzero vs random agent")
+	plt.plot()
 
-Muzero
-----
-Average reward: 2.4197111111111114
-Median reward: 2.0722222222222224
-Average steps: 5.9
-Median steps: 4.5
-Average unnecessary steps: 0.7
+	path = os.path.join(output_path, "eval_random_agent.png")
+	plt.savefig(path)
 
-Best reward: 5.9207777777777775
-Best opened cells: 82/100
-Avreage opened cells: 62.3/100
-Median opened cells: 74.0/100
-Highest steps: 17
+	return {
+		"random_stats": random_stats,
+		"muzero_stats": muzero_stats,	
+	}
 
----
-Wins: 0/10, 0%
-Average reward: 2.205244444444445
-Median reward: 1.1944444444444444
-Average steps: 5.6
-Median steps: 5.0
-Average unnecessary steps: 0.9
+def get_cache(file):
+	if os.path.isfile(file):
+		return json.loads(open(file, "r").read())
+	return {}
 
-Best reward: 8.809666666666667
-Best opened cells: 85/100
-Avreage opened cells: 52.0/100
-Median opened cells: 67.5/100
-Highest steps: 13
+def get_probability_matrix_blank_board():
+	env = gym.make("MinesweeperGuided-v0", width=10, height=10, mine_count=10)
+	env.reset()
 
----
+	observation = env._get_observation()
+	prob_matrix = env.get_probability_matrix()
 
+	muzero_prob_matrix, _ = create_distribution(get_muzero_model(env)[0].plan_action(observation, legal_actions=env.legal_actions()), T=1, size=100)
 
-"""
+	for board, name in zip([muzero_prob_matrix, prob_matrix], ["muzero", "mrgris"]):
+		plt.clf()
+		plt.imshow(board.reshape((10, 10)), cmap='gray')
+		plt.colorbar()
+		path = os.path.join(output_path, "blank_board_{}.png".format(name))
+		plt.savefig(path)
 
-"""
-SMALL WORLD (5x5)
-
-Random agent stats
-----
-Wins: 0/10, 0%
-Average reward: 0.705
-Average steps: 4.4
-Average unnecessary steps: 0.0
-
-Best reward: 1.95
-Best opened cells: 20/25
-Highest steps: 9
----
-Wins: 0/10, 0%
-Average reward: 0.8400000000000002
-Average steps: 3.8
-Average unnecessary steps: 0.0
-
-Best reward: 2.1
-Best opened cells: 17/25
-Highest steps: 7
----
-Wins: 0/10, 0%
-Average reward: 0.74
-Average steps: 2.7
-Average unnecessary steps: 0.0
-
-Best reward: 2.8
-Best opened cells: 18/25
-Highest steps: 8
-
-Muzero
-------
-Average reward: 0.8150000000000001
-Average steps: 4.1
-Average unnecessary steps: 0.0
-
-Best reward: 2.8999999999999995
-Best opened cells: 19/25
-Highest steps: 11
----
-Wins: 0/10, 0%
-Average reward: 0.99
-Average steps: 4.3
-Average unnecessary steps: 0.0
-
-Best reward: 2.25
-Best opened cells: 17/25
-Highest steps: 10
----
-Wins: 0/10, 0%
-Average reward: 0.8450000000000001
-Average steps: 4.1
-Average unnecessary steps: 0.0
-
-Best reward: 2.4
-Best opened cells: 16/25
-Highest steps: 10
-"""
+if __name__ == "__main__":
+#	data = evaluation_vs_radom_agent(get_cache(json_cache_file))
+#	open(json_cache_file, "w").write(json.dumps(data))
+	get_probability_matrix_blank_board()

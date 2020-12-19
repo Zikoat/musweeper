@@ -184,7 +184,7 @@ class muzero(nn.Module):
 			)
 		return game_history
 
-	def save(self, optimizer):
+	def save(self, optimizer, file_name=""):
 		"""
 		Save the model
 
@@ -198,7 +198,7 @@ class muzero(nn.Module):
 			'optimizer_state_dict': optimizer.state_dict(),
 			"main_hidden_layer_size": self.dynamics.main_hidden_layer_size,
 			'config': self.config
-		}, 'muzero')
+		}, 'muzero_{}'.format(file_name))
 
 	def load(self, path, optimizer, cpu=False):
 		"""
@@ -247,6 +247,6 @@ class muzero(nn.Module):
 		legal_actions = getattr(env, "legal_actions", None)
 		legal_actions = legal_actions() if legal_actions is not None else None
 		assert legal_actions is not None
-		best_action, _ = temperature_softmax(self.plan_action(state, legal_actions), T=1, size=self.action_size, with_softmax=True, get_legal_only=True)
+		best_action, _ = temperature_softmax(self.plan_action(state, legal_actions), T=1, size=self.action_size, with_softmax=True)
 		assert best_action in legal_actions
 		return best_action

@@ -1,11 +1,6 @@
 from gym import wrappers, logger
 import numpy as np
 
-def victory(env):
-    arr = env.open_cells.flatten()
-    sum_arr = arr[arr == -1]
-    return sum_arr.shape == env.mines_count and not env._game_over()
-
 def evaluate_agent(agent, env):
     # You can set the level to logger.DEBUG or logger.WARN if you
     # want to change the amount of output.
@@ -33,7 +28,6 @@ def evaluate_agent(agent, env):
             sum_reward += reward
             if done:
                 stats.append([sum_reward, *info.values()])
-                print(victory(env))
                 break
     env.close()
 
