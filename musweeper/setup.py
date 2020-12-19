@@ -10,6 +10,7 @@ if os.path.isfile(readme_path):
         long_description = fh.read()
 else:
     long_description = None
+
 print("the packages are:")
 print(setuptools.find_packages())
 
@@ -31,6 +32,5 @@ setuptools.setup(
         'gym',
         'tensorboard',
         'opencv-python'
-   #     f"gym_minesweeper @ git+https://github.com/Zikoat/gym-minesweeper#egg=gym_minesweeper"
     ]
 )
